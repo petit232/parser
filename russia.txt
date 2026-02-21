@@ -1,1 +1,7 @@
 # No active nodes for russia
+trojan://NISHIKUITAN111@185.148.104.114:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20346
+trojan://NISHIKUITAN111@185.148.105.154:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20349
+trojan://NISHIKUITAN111@185.148.107.11:443/?type=tcp&security=tls&allowInsecure=1&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20350
+trojan://NISHIKUITAN111@185.148.106.140:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20351
+trojan://NISHIKUITAN111@213.241.198.195:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20405
+trojan://NISHIKUITAN111@45.8.211.242:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B7%F0%9F%87%BA%20RU%20%7C%20TROJAN%20%7C%20427

@@ -1,1 +1,2 @@
 # No active nodes for hongkong
+trojan://aef2ca33-b162-409f-8f16-4c736c338412@20.205.37.136:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%AD%F0%9F%87%B0%20HK%20%7C%20TROJAN%20%7C%20501
