@@ -51,10 +51,12 @@ trojan://auto@162.159.44.202:443/?type=tcp&security=tls&sni=trojanmz.pages.dev
 trojan://d6ed263c-3f14-44db-bfee-cfcc26b234d1@107.172.217.30:443?security=tls&sni=san.ydnode.us&allowInsecure=1&type=tcp
 trojan://telegram-id-directvpn@54.191.230.255:22222?security=tls&alpn=http/1.1&headerType=none&type=tcp&sni=trj.rollingnext.co.uk
 trojan://tune7jerky7HAYRICK@45.79.19.196:443?security=tls&sni=ap-northeast-1.openssl3.com&allowInsecure=1&type=tcp
+vless://05fcc50b-a029-49cc-baa3-7e46ff085a27@us-east-6.vpnd.io:17673?type=tcp&security=reality&encryption=none&pbk=FwNfSQDkbgQUutK8ig90HObEAIyEVLbJebvqoM1jSCA&fp=random&sni=amazon.com&sid=0fedc2543d4b&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%BA%F0%9F%87%B8%20USA%20%F0%9F%87%BA%F0%9F%87%B8
 vless://48198295-b7ba-4b5c-8d85-085d55a6c869@69.84.182.163:443?encryption=none&security=tls&sni=🔒
 vless://504fa227-6493-4c4b-983c-4661c96a0e11@23.134.82.1:80/?type=ws&encryption=none&host=vv.cscfwoker.fun&path=🔒
 vless://6202b230-417c-4d8e-b624-0f71afa9c75d@193.32.177.79:443?encryption=none&security=tls&sni=sni.111000.indevs.in&insecure=0&allowInsecure=0&type=ws&host=sni.111000.indevs.in&path=%2F%3Fed%3D2560%26Telegram%F0%9F%87%A8%F0%9F%87%B3%20%40WangCai2
 vless://7566bbb2-3578-43a3-af42-643541767864@deepseek.com:80?path=🔒
+vless://9174f2fb-c186-4e49-bc2e-a6db9e0a881c@us-east-2.vpnd.io:14159?type=tcp&security=reality&encryption=none&pbk=csHT_eLH0xSFUjQ7C1_PkE7s2uWqW67fU_J_S6blDjA&fp=random&sni=amazon.com&sid=a5cf&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%BA%F0%9F%87%B8%20USA%20%F0%9F%87%BA%F0%9F%87%B8
 vless://d38ee50c-c3d5-402f-907a-ab6ba229d774@us.connectv.net:443?security=reality&encryption=none&pbk=vegx20Xc9XIkr8nfdEB7LZnficXNURVnDbB8_ND97Dw&headerType=none&type=tcp&flow=xtls-rprx-vision&sni=us.connectv.net
 vless://dd0cfef0-fda9-47ec-8a65-49d7bc004f82@63.141.128.189:443?path=%2F--Telegram---%40MiTiVPN%2F---%40MiTiVPN&security=tls&encryption=none&insecure=1&host=l7r.ir&fp=chrome&type=ws&allowInsecure=1&sni=l7r.ir
 vless://f6f442e3-69d1-4a83-bb78-241152eed859@40.160.10.124:443?mode=stream-one&path=🔒
@@ -79,5 +81,5 @@ vmess://eyJhZGQiOiAibXJiMi5zaGFiaWppY2hhbmcuY29tIiwgImFpZCI6IDAsICJob3N0IjogIm1y
 vmess://eyJhZGQiOiAidnVrMi4wYmFkLmNvbSIsICJhaWQiOiAwLCAiaG9zdCI6ICJ2dWsyLjBiYWQuY29tIiwgImlkIjogIjkyNzA5NGQzLWQ2NzgtNDc2My04NTkxLWUyNDBkMGJjYWU4NyIsICJuZXQiOiAid3MiLCAicGF0aCI6ICIvY2hhdCIsICJwb3J0IjogNDQzLCAicHMiOiAiNEtpYW4tMTYyNjEiLCAic2VjdXJpdHkiOiAiYXV0byIsICJza2lwLWNlcnQtdmVyaWZ5IjogZmFsc2UsICJzbmkiOiAidnVrMi4wYmFkLmNvbSIsICJ0bHMiOiAidGxzIiwgInR5cGUiOiAiYXV0byJ9
 vmess://eyJhZGQiOiIxNTQuMjAxLjc2LjE3MiIsImFpZCI6IjAiLCJhbHBuIjoiIiwiZnAiOiIiLCJob3N0IjoiIiwiaWQiOiI0OTZjZWM3MS1hMGZkLTRmMjUtYmJhMS1jYmE5ZTlkNWE1MmYiLCJuZXQiOiJ3cyIsInBhdGgiOiIvIiwicG9ydCI6MjA1MjEsInBzIjoi8J+HrfCfh7AgSG9uZyBLb25nLCBIb25nIEtvbmcgW0JMXSIsInNjeSI6ImF1dG8iLCJzbmkiOiIiLCJ0bHMiOiIiLCJ0eXBlIjoiLS0tIiwidiI6IjIiLCJuYW1lIjoi8J+UpUpvaW4rVGVsZWdyYW06QEZhcmFoX1ZQTvCfn6MifQ==
 
-# Total: 80
-# Updated: 2026-02-21 10:31:48
+# Total: 82
+# Updated: 2026-02-21 11:01:38
