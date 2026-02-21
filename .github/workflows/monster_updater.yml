@@ -6,16 +6,16 @@ on:
       - 'all_sources.txt'
       - 'parser.py'
   schedule:
-    - cron: '0 */6 * * *' # Авто-запуск каждые 6 часов
-  workflow_dispatch: # Кнопка для ручного запуска
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # КРИТИЧЕСКИ ВАЖНО: разрешает боту сохранять файлы
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run Monster Script
+      - name: Run Parser
         run: python parser.py
 
       - name: Commit and Push changes
@@ -34,5 +34,5 @@ jobs:
           git config --local user.email "bot@github.com"
           git config --local user.name "VPN-Monster-Bot"
           git add *.txt
-          git commit -m "Auto-Update: $(date)" || echo "No changes to commit"
+          git commit -m "Auto-Update: $(date)" || echo "No changes"
           git push
