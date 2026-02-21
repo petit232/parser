@@ -2,12 +2,13 @@ name: ⚡ Monster Engine Auto-Sync
 
 on:
   schedule:
-    - cron: '0 * * * *' # Запуск каждый час
+    - cron: '*/20 * * * *' # Каждые 20 минут
   push:
     paths:
-      - 'all_sources.txt' # Запуск при обновлении базы ссылок
-      - 'parser.py'        # Запуск при обновлении логики парсера
-  workflow_dispatch: # Возможность запустить вручную кнопкой
+      - 'all_sources.txt'
+      - 'parser.py'
+      - 'requirements.txt'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,40 +19,38 @@ jobs:
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip'
 
       - name: 📦 Install Dependencies
         run: |
-          pip install geoip2 aiohttp
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
 
-      - name: 🌍 Download GeoIP Database
+      - name: 🌍 Download GeoIP
         run: |
-          # Скачиваем актуальную базу стран (публичный зеркальный билд)
-          curl -L -o GeoLite2-Country.mmdb https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb
+          mkdir -p "база данных"
+          # Если файла нет в папке, скачиваем его
+          if [ ! -f "база данных/GeoLite2-Country.mmdb" ]; then
+            curl -L -o "база данных/GeoLite2-Country.mmdb" https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb
+          fi
 
       - name: 🚀 Run Monster Parser
-        run: python parser.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "прокси"
+          python parser.py
 
       - name: 💾 Save Changes
         run: |
           git config --global user.name "Monster-Bot"
           git config --global user.email "monster-bot@github.com"
           git add .
-          # Проверяем, есть ли изменения, чтобы не спамить пустыми коммитами
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No changes"
           else
-            git commit -m "⚡ Auto-Sync Monster: $(date +'%d/%m/%Y %H:%M:%S') [Sorted & Cleaned]"
+            git commit -m "⚡ Monster Sync: $(date +'%d/%m/%Y %H:%M:%S')"
             git pull --rebase origin main
             git push
           fi
