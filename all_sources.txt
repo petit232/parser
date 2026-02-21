@@ -2,7 +2,7 @@
 
 https://vpnd.io/subscription/vless/16b54f1014e6895619ccf4017570599e0cde7df882ee2d86b348f587e7d9e12a 
 
-https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/all_extracted_configs.txt
+
 https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/ssr_configs.txt
 
 
