@@ -215,9 +215,9 @@ class MonsterParser:
             try:
                 remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).decode().strip()
                 path = remote.replace("git@github.com:", "").replace("https://github.com/", "").replace(".git", "")
-                repo_url = f"https://raw.githubusercontent.com/{path}/main/прокси"
+                repo_url = f"https://raw.githubusercontent.com/{path}/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8"
             except:
-                repo_url = "https://raw.githubusercontent.com/USER/REPO/main/прокси"
+                repo_url = "https://raw.githubusercontent.com/USER/REPO/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8"
 
             content = [
                 "🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ",
@@ -280,6 +280,8 @@ class MonsterParser:
                 
                 if total_count == 0:
                     logger.warning("No links found.")
+                    # Даже если ничего не нашли, обновим дату в главном файле ссылок
+                    self.update_links_for_clients({})
                     return
 
                 # Batching logic
@@ -322,7 +324,7 @@ class MonsterParser:
                 path = os.path.join(OUTPUT_DIR, filename)
                 current_nodes = {}
                 
-                # Load existing
+                # Load existing nodes to keep them until they fail a check
                 if os.path.exists(path):
                     with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
@@ -330,15 +332,29 @@ class MonsterParser:
                             if node and node not in dead_links:
                                 current_nodes[node] = True
                 
-                # Add new
+                # Add new live results
                 for res in live_results:
                     target = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
                     if target == filename:
                         current_nodes[res['link']] = True
                 
                 nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_FILE]
-                with open(path, 'w', encoding='utf-8') as f:
-                    f.write('\n'.join(nodes_to_save) + '\n')
+                
+                # FORCE UPDATE: Even if nodes_to_save is empty or unchanged,
+                # we rewrite the file to update the Git timestamp.
+                try:
+                    with open(path, 'w', encoding='utf-8') as f:
+                        if nodes_to_save:
+                            f.write('\n'.join(nodes_to_save) + '\n')
+                        else:
+                            # If no nodes, leave a comment or empty line to ensure file exists and is "touched"
+                            f.write('') 
+                    
+                    # Update modification time explicitly for insurance
+                    os.utime(path, None)
+                except Exception as e:
+                    logger.error(f"Error updating file {filename}: {e}")
+                    
                 files_updated_stats[filename] = len(nodes_to_save)
 
             self.update_links_for_clients(files_updated_stats)
