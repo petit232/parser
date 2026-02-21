@@ -1,1 +1,6 @@
-# Monster Update: 21:16:01 | Total Nodes: 0
+vless://583ceab3-4022-4553-9158-9bedc625ad4e@141.11.203.177:8880?allowInsecure=0&sni=🔒
+vless://ccedb1b1-35f3-46d1-a85a-c699eef5f3e1@fran.scroogethebest.com:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=🔒
+vless://8d09e92f-a453-41c0-a19f-3355e6567736@163.172.189.39:443?security=reality&flow=xtls-rprx-vision&sni=🔒
+vless://401374e6-df77-41fb-f638-dad8184f175b@141.11.203.139:443?mode=gun&security=tls&encryption=none&alpn=h2&authority=&type=grpc&serviceName=&sni=🔒
+trojan://e0d44ae7-cb7d-4acc-a8c0-9861a6f5eaad@51.91.11.29:80?security=tls&sni=🔒
+ss://dc8eccdb-ecfa-435f-9ac1-5dc4882e7b51@162.19.228.119:80?security=none&amp;type=ws&amp;path=🔒
