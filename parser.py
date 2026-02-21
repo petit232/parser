@@ -23,7 +23,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ==============================================================================
 
 # --- НАСТРОЙКИ ДЕМОНА И ТАЙМЕРОВ ---
-UPDATE_INTERVAL_HOURS = 6       # Основной интервал полного обновления базы (в часах)
+UPDATE_INTERVAL_HOURS = 1       # ИНТЕРВАЛ ОБНОВЛЕНИЯ: 1 ЧАС (Дробное обновление 1/24 базы)
+HOURS_TO_COMPLETE_CYCLE = 24    # За сколько часов база должна быть проверена полностью
 WATCHER_INTERVAL_SEC = 2.0      # Как часто проверять локальные файлы на изменения (в секундах)
 PORT_TIMEOUT = 4.0              # Таймаут TCP Ping (для Hysteria2/Reality)
 BLACKLIST_BAIL_DAYS = 7         # Сколько дней хранить мертвые узлы в блэклисте (глубокая зачистка)
@@ -31,13 +32,14 @@ BLACKLIST_BAIL_DAYS = 7         # Сколько дней хранить мер�
 # --- НАСТРОЙКИ ПОТОКОВ И API ---
 THREAD_COUNT = 150              # Экстремальная многопоточность для TCP Ping (быстрая отбраковка)
 GEOIP_PARALLEL_LEVEL = 10       # Строго 10 потоков для GeoIP (защита от перелимита и банов API)
-GEOIP_LIMIT_PER_RUN = 10000     # Максимальное количество проверок GeoIP за один цикл
+GEOIP_LIMIT_PER_RUN = 10000     # Жесткий лимит GeoIP (защита на случай резкого всплеска)
 
 # --- ФАЙЛОВАЯ СИСТЕМА ---
 LOCK_FILE = "monster_daemon.lock"
 PERSISTENT_BLACKLIST = "persistent_blacklist.txt"
 PROCESSED_SOURCES_FILE = "processed_sources.dat"
 ALL_SOURCES_FILE = "all_sources.txt"
+MONSTER_STATE_FILE = "monster_state.json"  # УМНАЯ ПАМЯТЬ: хранит статус и время проверки узлов
 
 # --- КОНФИГУРАЦИЯ СТРАН (PREMIUM MIRROR DESIGN) ---
 # Формат оформления: ❤️ 🇧🇾 Belarus | BY 🇧🇾 ❤️
@@ -96,11 +98,7 @@ def get_random_ua():
     return random.choice(uas)
 
 def atomic_save(filepath, content):
-    """
-    Атомарное сохранение файла.
-    Гарантирует, что файл не будет поврежден при сбое питания или остановке скрипта.
-    Записывает во временный файл, затем мгновенно подменяет оригинал.
-    """
+    """Атомарное сохранение файла. Гарантирует целостность базы при сбоях."""
     tmp_file = f"{filepath}.tmp"
     try:
         with open(tmp_file, 'w', encoding='utf-8') as f:
@@ -121,11 +119,59 @@ def get_file_mod_time(filepath):
     return 0
 
 # ==============================================================================
+# --- УМНОЕ КЭШИРОВАНИЕ И ПАМЯТЬ СОСТОЯНИЙ ---
+# ==============================================================================
+
+def load_state():
+    """Загрузка памяти состояния узлов."""
+    if os.path.exists(MONSTER_STATE_FILE):
+        try:
+            with open(MONSTER_STATE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except: return {}
+    return {}
+
+def save_state(state):
+    """Сохранение памяти состояния узлов."""
+    try:
+        atomic_save(MONSTER_STATE_FILE, json.dumps(state, indent=2))
+    except Exception as e:
+        print(f"[ERROR] Не удалось сохранить состояние: {e}")
+
+def sync_caches_with_master(master_set):
+    """
+    ИДЕАЛЬНОЕ ЗЕРКАЛО: Вычищает кэш IP и файл состояний от мусора.
+    Если узел пропал из all_sources.txt, он мгновенно и навсегда удаляется отовсюду.
+    """
+    print(f"🧹 Синхронизация кэша. Поиск удаленных подписок и призраков...", flush=True)
+    
+    # Синхронизация STATE_FILE
+    state = load_state()
+    keys_to_delete = [cfg for cfg in state.keys() if cfg not in master_set]
+    for k in keys_to_delete:
+        del state[k]
+        
+    # Синхронизация IP_CACHE
+    active_ips = set()
+    for cfg in master_set:
+        host, _ = get_server_info(cfg)
+        if host: active_ips.add(host)
+        
+    with CACHE_LOCK:
+        ips_to_delete = [ip for ip in IP_CACHE.keys() if ip not in active_ips]
+        for ip in ips_to_delete:
+            del IP_CACHE[ip]
+
+    save_state(state)
+    print(f"✨ Кэш очищен! Удалено призраков: {len(keys_to_delete)} конфигов, {len(ips_to_delete)} IP-адресов.")
+    return state
+
+# ==============================================================================
 # --- ПАРСИНГ И ДЕКОДИРОВАНИЕ ---
 # ==============================================================================
 
 def decode_base64(data):
-    """Безопасное декодирование Base64 с обработкой отсутствующего паддинга."""
+    """Безопасное декодирование Base64."""
     try:
         data = re.sub(r'[^a-zA-Z0-9+/=]', '', data)
         if not data: return ""
@@ -135,16 +181,13 @@ def decode_base64(data):
     except Exception: return ""
 
 def encode_base64(data):
-    """Кодирование строки в Base64 без переносов."""
+    """Кодирование строки в Base64."""
     try:
         return base64.b64encode(data.encode('utf-8')).decode('utf-8')
     except Exception: return ""
 
 def get_server_info(config):
-    """
-    Агрессивный парсер. Извлекает IP/Домен и Порт из любой V2Ray/Xray ссылки.
-    Поддерживает JSON (vmess) и URI-схемы (vless, trojan, ss, etc.).
-    """
+    """Агрессивный парсер. Извлекает IP/Домен и Порт из любой ссылки."""
     try:
         clean_config = config.split('#')[0].strip()
         if clean_config.startswith("vmess://"):
@@ -153,7 +196,6 @@ def get_server_info(config):
                 v_data = json.loads(decoded)
                 return str(v_data.get('add', '')).strip(), str(v_data.get('port', '')).strip()
         
-        # Регулярка для URI: protocol://[userinfo@]host:port[?params]
         match = re.search(r'://(?:[^@]+@)?([^:/#\?]+):(\d+)', clean_config)
         if match:
             return match.group(1).strip(), match.group(2).strip()
@@ -161,10 +203,7 @@ def get_server_info(config):
     return None, None
 
 def beautify_config(config, country_key=None, fallback_code="UN"):
-    """
-    Зеркальное форматирование 1в1. Премиум дизайн для клиента.
-    Внедряет флаги, названия стран и эмодзи в имя профиля.
-    """
+    """Зеркальное форматирование 1в1. Премиум дизайн для клиента."""
     try:
         if country_key and country_key in COUNTRIES:
             info = COUNTRIES[country_key]
@@ -190,10 +229,7 @@ def beautify_config(config, country_key=None, fallback_code="UN"):
 # ==============================================================================
 
 def is_node_alive(host, port, timeout=PORT_TIMEOUT):
-    """
-    Жесткий TCP Ping. Если порт не отвечает за 4 секунды — узел считается мертвым.
-    Отсеивает локальные и мусорные IP-адреса.
-    """
+    """Жесткий TCP Ping. Отсеивает локальные и мусорные IP-адреса."""
     if not host or not port: return False
     if host.startswith(('127.', '192.168.', '10.', '172.16.', '0.')) or host == 'localhost':
         return False
@@ -218,15 +254,11 @@ def api_09(h): return requests.get(f"https://api.scamalytics.com/ip/{h}", timeou
 def api_10(h): return requests.get(f"https://extreme-ip-lookup.com/json/{h}?key=demo", timeout=4).json().get("countryCode")
 
 def check_ip_location_smart(host):
-    """
-    Умный GeoIP с кэшированием, распределением нагрузки и рандомизацией API.
-    Гарантирует отсутствие перелимита даже при 10 потоках.
-    """
+    """Умный GeoIP с кэшированием, распределением нагрузки и рандомизацией API."""
     if SHOULD_EXIT: return None
     with CACHE_LOCK:
         if host in IP_CACHE: return IP_CACHE[host]
     
-    # Микро-задержка для синхронизации потоков и снижения спама
     time.sleep(random.uniform(0.1, 0.5))
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
@@ -260,8 +292,6 @@ def load_persistent_blacklist():
                         node_id = parts[0]
                         date_str = parts[1]
                         try:
-                            # Удаляем из блэклиста старые записи (больше 7 дней), 
-                            # чтобы дать шанс серверам, которые могли ожить
                             date_obj = datetime.fromisoformat(date_str)
                             if datetime.now() - date_obj < timedelta(days=BLACKLIST_BAIL_DAYS):
                                 bl.add(node_id)
@@ -280,7 +310,6 @@ def save_persistent_blacklist(new_dead_nodes):
         for node in new_dead_nodes:
             BLACKLIST_CACHE.add(f"{node}|{now_str}")
             
-    # Сохраняем только актуальные форматы (node|date)
     valid_lines = []
     with BLACKLIST_LOCK:
         for item in BLACKLIST_CACHE:
@@ -292,17 +321,21 @@ def save_persistent_blacklist(new_dead_nodes):
 
 def deep_purge_files(dead_configs):
     """
-    АБСОЛЮТНАЯ ЗАЧИСТКА: Физически удаляет мертвые конфигурации из всех текстовых файлов.
-    Это гарантирует, что мертвые ссылки никогда больше не будут читаться.
+    АБСОЛЮТНАЯ ЗАЧИСТКА: Физически удаляет мертвые конфигурации из текстовых файлов.
+    Также мгновенно вычищает их из состояния и кэша.
     """
     if not dead_configs: return
     
-    files_to_purge = [ALL_SOURCES_FILE, "mix.txt", "sub_monster.txt", "failed_nodes.txt"]
-    for c in COUNTRIES:
-        files_to_purge.append(f"{c}.txt")
-        
-    purged_total = 0
+    # 1. Удаление из памяти
     dead_set = set([c.strip() for c in dead_configs])
+    state = load_state()
+    keys_to_delete = [cfg for cfg in state.keys() if cfg in dead_set]
+    for k in keys_to_delete: del state[k]
+    save_state(state)
+    
+    # 2. Удаление из файлов
+    files_to_purge = [ALL_SOURCES_FILE]
+    purged_total = 0
     
     for filepath in files_to_purge:
         if not os.path.exists(filepath): continue
@@ -320,11 +353,10 @@ def deep_purge_files(dead_configs):
                     clean_lines.append(line)
                     continue
                 
-                # Если это base64 файл (например sub_monster.txt)
+                # Обработка Base64 внутри all_sources.txt
                 if not any(p in l_strip for p in ALLOWED_PROTOCOLS):
                     decoded = decode_base64(l_strip)
                     if decoded and any(p in decoded for p in ALLOWED_PROTOCOLS):
-                        # Это мультистрочный base64 или однострочный
                         configs_in_b64 = decoded.splitlines()
                         clean_b64 = [cfg for cfg in configs_in_b64 if cfg.strip() not in dead_set]
                         if len(clean_b64) != len(configs_in_b64):
@@ -335,7 +367,7 @@ def deep_purge_files(dead_configs):
                             clean_lines.append(line)
                         continue
 
-                # Обычный текстовый конфиг
+                # Обычный текст
                 if l_strip in dead_set:
                     file_changed = True
                     purged_total += 1
@@ -349,7 +381,7 @@ def deep_purge_files(dead_configs):
             print(f"[ERROR] Ошибка глубокой зачистки файла {filepath}: {e}")
             
     if purged_total > 0:
-        print(f"🗑️ DEEP PURGE: Успешно вырезано {purged_total} упоминаний мертвых узлов из локальных баз.")
+        print(f"🗑️ DEEP PURGE: Вырезано {purged_total} упоминаний мертвых узлов из источников.")
 
 def load_processed_sources():
     """Хеши уже спарсенных внешних ссылок."""
@@ -371,26 +403,20 @@ def save_processed_source_hash(url):
 # ==============================================================================
 
 def check_worker(config, seen_lock, global_seen):
-    """
-    Поток TCP проверки. 
-    Автоматически отсеивает уже проверенные (global_seen) и заблокированные.
-    """
+    """Поток TCP проверки."""
     h, p = get_server_info(config)
     if not h or not p: return None
     
     nid = f"{h}:{p}"
     
-    # Мгновенный отсев по блэклисту
     with BLACKLIST_LOCK:
         if any(b.startswith(nid) for b in BLACKLIST_CACHE):
-            return ("FAIL", nid, config) # Возвращаем как Fail, чтобы зачистить из файлов
+            return ("FAIL", nid, config)
             
-    # Защита от дублей в рамках одной сессии
     with seen_lock:
         if nid in global_seen: return None
         global_seen.add(nid)
         
-    # Реальный пинг
     if is_node_alive(h, p): 
         return ("OK", nid, config)
     else: 
@@ -414,7 +440,6 @@ def generate_static_links():
                                    capture_output=True, text=True).stdout.strip()
         
         if not remote_url:
-            print("[!] Git Origin URL не найден. Ссылки будут локальными.")
             raw_base = "https://raw.githubusercontent.com/USER/REPO/main/"
         else:
             raw_base = remote_url.replace("github.com", "raw.githubusercontent.com").replace(".git", "")
@@ -435,7 +460,7 @@ def generate_static_links():
         print(f"[!] Ошибка генератора ссылок: {e}")
 
 def git_commit_push():
-    """Жесткая синхронизация с GitHub. База обновляется мгновенно."""
+    """Жесткая синхронизация с GitHub."""
     print("\n[Git Sync] Синхронизация с облаком...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "Monster-Ultra-Daemon"], check=True)
@@ -459,16 +484,41 @@ def git_commit_push():
     except Exception as e: 
         print(f"[Git Sync] ❌ Ошибка синхронизации: {e}")
 
-def save_and_organize(structured, final_mix_list, failed_list):
-    """Атомарное распределение живых узлов по странам."""
+def save_and_organize(master_set, state):
+    """
+    Генерация итоговых файлов ИСКЛЮЧИТЕЛЬНО на основе 'OK' статуса из State.
+    Это гарантирует идеальное зеркало. Если конфиг не 'OK', он в файлы не попадает.
+    """
+    structured = {c: [] for c in COUNTRIES}
+    final_mix = []
+    failed_list = []
+
+    for cfg in master_set:
+        cfg_state = state.get(cfg, {})
+        status = cfg_state.get('status')
+        
+        if status == 'OK':
+            code = cfg_state.get('geoip', 'UN')
+            matched = False
+            for c_name, c_info in COUNTRIES.items():
+                if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
+                    b_cfg = beautify_config(cfg, c_name)
+                    structured[c_name].append(b_cfg)
+                    final_mix.append(b_cfg)
+                    matched = True
+                    break
+            if not matched:
+                final_mix.append(beautify_config(cfg, None, fallback_code=code))
+        elif status == 'FAIL':
+            failed_list.append(cfg)
+
     for country in COUNTRIES:
         file_name = f"{country}.txt"
-        configs = structured.get(country, [])
-        valid = sorted(list(set(configs)))
+        valid = sorted(list(set(structured[country])))
         content = "\n".join(valid) if valid else f"# No active nodes for {country}\n"
         atomic_save(file_name, content)
 
-    valid_mix = sorted(list(set(final_mix_list)))
+    valid_mix = sorted(list(set(final_mix)))
     atomic_save("mix.txt", "\n".join(valid_mix) if valid_mix else "# No active nodes found\n")
     atomic_save("sub_monster.txt", encode_base64("\n".join(valid_mix)) if valid_mix else "")
     
@@ -481,8 +531,10 @@ def save_and_organize(structured, final_mix_list, failed_list):
 # ==============================================================================
 
 def run_update_cycle(trigger_reason="Таймер"):
-    """Полный цикл сбора, проверки, зачистки и публикации."""
+    """Полный цикл: Сбор, Синхронизация Кэша, Чанкинг (1/24), Проверка, Пуш."""
     start_time = datetime.now()
+    now_ts = start_time.timestamp()
+    
     print(f"\n{'='*70}")
     print(f"🔥 ЗАПУСК ЦИКЛА MONSTER ENGINE ULTRA")
     print(f"⏱️ Триггер: {trigger_reason} | Время: {start_time.strftime('%H:%M:%S')}")
@@ -491,10 +543,10 @@ def run_update_cycle(trigger_reason="Таймер"):
     load_persistent_blacklist()
     processed_hashes = load_processed_sources()
     
-    raw_configs = []
+    raw_configs = set()
     new_sources = []
     
-    # 1. Читаем локальные источники (Auto-Trigger файл)
+    # 1. Читаем локальные источники (Сырые данные)
     if os.path.exists(ALL_SOURCES_FILE):
         with open(ALL_SOURCES_FILE, 'r', encoding='utf-8') as f:
             for line in f:
@@ -506,20 +558,9 @@ def run_update_cycle(trigger_reason="Таймер"):
                     if h not in processed_hashes:
                         new_sources.append(l_strip)
                 elif any(p in l_strip for p in ALLOWED_PROTOCOLS):
-                    raw_configs.append(l_strip)
-    
-    # 2. Читаем уже существующие базы стран (чтобы перепроверить старые рабочие узлы)
-    for c in COUNTRIES:
-        fn = f"{c}.txt"
-        if os.path.exists(fn):
-            with open(fn, 'r', encoding='utf-8') as f:
-                raw_configs.extend([l.strip() for l in f if l.strip() and not l.startswith('#')])
-                
-    if os.path.exists("mix.txt"):
-        with open("mix.txt", 'r', encoding='utf-8') as f:
-            raw_configs.extend([l.strip() for l in f if l.strip() and not l.startswith('#')])
-
-    # 3. Парсинг внешних ссылок
+                    raw_configs.add(l_strip)
+                    
+    # 2. Парсинг внешних ссылок (Дополняем Мастер-Лист)
     if new_sources:
         print(f"📡 Загрузка {len(new_sources)} новых внешних источников...", flush=True)
         for url in new_sources:
@@ -533,66 +574,70 @@ def run_update_cycle(trigger_reason="Таймер"):
                     if decoded: text = decoded
                 
                 pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
-                found = re.findall(pattern, text)
-                raw_configs.extend(found)
+                for cfg in re.findall(pattern, text): raw_configs.add(cfg)
                 save_processed_source_hash(url)
             except Exception as e:
                 print(f"  [!] Ошибка парсинга {url}: {e}")
-                continue
 
-    total_configs = list(set(raw_configs))
-    print(f"🔍 Всего уникальных конфигураций на входе: {len(total_configs)}")
+    master_set = list(raw_configs)
+    print(f"🔍 Формирование Мастер-Листа: Найдено {len(master_set)} уникальных конфигураций.")
 
-    if not total_configs:
-        print("⚠️ Нет данных для обработки. Завершение цикла.")
+    if not master_set:
+        print("⚠️ Мастер-Лист пуст. Зачистка базы и выход.")
+        sync_caches_with_master(set())
+        save_and_organize([], [], [])
+        git_commit_push()
         return
 
-    # 4. Фаза агрессивного TCP Ping
-    valid_nodes = []
+    # 3. Идеальное Зеркало: Очистка кэшей и состояний от удаленных конфигов
+    state = sync_caches_with_master(set(master_set))
+
+    # 4. Дробная проверка (Chunking): Берем 1/24 часть самых старых узлов
+    chunk_size = max(500, len(master_set) // HOURS_TO_COMPLETE_CYCLE)
+    
+    # Сортируем: сначала те, у кого last_checked меньше (самые старые) или вообще 0 (новые)
+    sorted_master = sorted(master_set, key=lambda c: state.get(c, {}).get('last_checked', 0))
+    chunk_to_check = sorted_master[:chunk_size]
+    
+    print(f"⚖️ Чанкинг: Выбрано {len(chunk_to_check)} конфигов для проверки в этом часу.")
+
+    # 5. Фаза TCP Ping для выбранного Чанка
     dead_configs_for_purge = []
     new_dead_nodes = set()
     global_seen = set()
     seen_lock = threading.Lock()
     
-    print(f"⚡ Старт TCP Ping (Экстремальный режим: {THREAD_COUNT} потоков)...", flush=True)
+    valid_in_chunk = []
+    
+    print(f"⚡ Старт TCP Ping (Потоков: {THREAD_COUNT})...", flush=True)
     with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-        futures = [executor.submit(check_worker, c, seen_lock, global_seen) for c in total_configs]
+        futures = [executor.submit(check_worker, c, seen_lock, global_seen) for c in chunk_to_check]
         for i, future in enumerate(as_completed(futures)):
             if SHOULD_EXIT: break
             try:
                 res = future.result()
                 if res:
                     status, nid, config = res
+                    # Обновляем состояние конфига в памяти
+                    if config not in state: state[config] = {}
+                    state[config]['last_checked'] = now_ts
+                    state[config]['status'] = status
+                    
                     if status == "OK":
-                        valid_nodes.append(config)
+                        valid_in_chunk.append(config)
                     elif status == "FAIL":
                         new_dead_nodes.add(nid)
                         dead_configs_for_purge.append(config)
             except: continue
             
             if i > 0 and i % 500 == 0:
-                print(f"  > Пинг: обработано {i}/{len(total_configs)}...")
+                print(f"  > Пинг: проверено {i}/{len(chunk_to_check)}...")
 
-    print(f"✅ Успешно прошли проверку: {len(valid_nodes)} узлов.")
-    print(f"❌ Мертвых/Недоступных узлов: {len(dead_configs_for_purge)}.")
-
-    # 5. DEEP PURGE: Физическое удаление мертвого мусора и обновление блэклиста
-    if dead_configs_for_purge:
-        print("🧹 Запуск системы глубокой зачистки (Deep Purge)...")
-        save_persistent_blacklist(new_dead_nodes)
-        deep_purge_files(dead_configs_for_purge)
-
-    # 6. Фаза Геолокации (Строго контролируемые потоки)
-    structured_data = {c: [] for c in COUNTRIES}
-    final_mix = []
-    
-    if valid_nodes:
-        print(f"🌍 GeoIP Классификация (Контроль: {GEOIP_PARALLEL_LEVEL} потоков)...", flush=True)
-        # Очистка старого кэша для актуализации (оставляем только для текущего пула)
-        with CACHE_LOCK: IP_CACHE.clear()
-        
-        random.shuffle(valid_nodes)
-        queue = valid_nodes[:GEOIP_LIMIT_PER_RUN]
+    # 6. Фаза GeoIP для выживших из Чанка
+    if valid_in_chunk:
+        print(f"🌍 GeoIP для живых узлов чанка ({GEOIP_PARALLEL_LEVEL} потоков)...", flush=True)
+        # Ограничиваем на всякий случай
+        queue = valid_in_chunk[:GEOIP_LIMIT_PER_RUN]
         
         with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as geo_executor:
             geo_futures = [geo_executor.submit(geoip_parallel_worker, cfg) for cfg in queue]
@@ -600,28 +645,24 @@ def run_update_cycle(trigger_reason="Таймер"):
                 if SHOULD_EXIT: break
                 try:
                     cfg, code = f.result()
-                    matched = False
-                    if code and code != "UN":
-                        for c_name, c_info in COUNTRIES.items():
-                            if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
-                                b_cfg = beautify_config(cfg, c_name)
-                                structured_data[c_name].append(b_cfg)
-                                final_mix.append(b_cfg)
-                                matched = True
-                                break
-                    if not matched:
-                        final_mix.append(beautify_config(cfg, None, fallback_code=code))
-                        
-                    if i > 0 and i % 100 == 0:
-                        print(f"  > Локация определена: {i}/{len(queue)}...")
+                    state[cfg]['geoip'] = code
                 except: continue
 
-    # 7. Атомарное сохранение и Пуш
-    save_and_organize(structured_data, final_mix, dead_configs_for_purge)
+    # Сохраняем обновленные состояния
+    save_state(state)
+
+    # 7. DEEP PURGE: Физическое удаление мертвого мусора (только тех, кто провалился сейчас)
+    if dead_configs_for_purge:
+        print("🧹 Запуск системы глубокой зачистки (Deep Purge)...")
+        save_persistent_blacklist(new_dead_nodes)
+        deep_purge_files(dead_configs_for_purge)
+
+    # 8. Атомарное сохранение и Пуш (На основе ВСЕГО Мастер-Листа, кто имеет статус OK)
+    save_and_organize(master_set, state)
     generate_static_links()
     git_commit_push()
     
-    gc.collect() # Чистка оперативной памяти
+    gc.collect()
     print(f"\n🏁 ЦИКЛ УСПЕШНО ЗАВЕРШЕН ЗА {datetime.now() - start_time}.")
 
 # ==============================================================================
@@ -639,13 +680,12 @@ def start_daemon():
     
     print(f"\n{'*'*70}")
     print(f"🛡️ VPN MONSTER DAEMON ЗАПУЩЕН И АКТИВЕН 🛡️")
-    print(f"Интервал обновлений: {UPDATE_INTERVAL_HOURS} часов")
+    print(f"Интервал обновлений: {UPDATE_INTERVAL_HOURS} час (Дробное обновление базы)")
     print(f"Мониторинг файла '{ALL_SOURCES_FILE}' включен.")
     print(f"Нажмите Ctrl+C для безопасной остановки.")
     print(f"{'*'*70}\n")
     
     last_run_time = datetime.min
-    # Запоминаем время модификации файла для Auto-Trigger
     last_sources_mod_time = get_file_mod_time(ALL_SOURCES_FILE)
     
     try:
@@ -653,9 +693,9 @@ def start_daemon():
             now = datetime.now()
             trigger_reason = None
             
-            # Проверка 1: Прошло ли 6 часов?
+            # Проверка 1: Прошел ли 1 час?
             if now - last_run_time >= timedelta(hours=UPDATE_INTERVAL_HOURS):
-                trigger_reason = f"Плановое обновление ({UPDATE_INTERVAL_HOURS}ч)"
+                trigger_reason = f"Плановое обновление (Чанкинг {UPDATE_INTERVAL_HOURS}ч)"
             
             # Проверка 2: Изменил ли пользователь файл all_sources.txt?
             current_mod_time = get_file_mod_time(ALL_SOURCES_FILE)
@@ -663,7 +703,6 @@ def start_daemon():
                 trigger_reason = f"Обнаружены изменения в {ALL_SOURCES_FILE}"
                 last_sources_mod_time = current_mod_time
                 
-            # Если сработал триггер -> запускаем цикл
             if trigger_reason:
                 run_update_cycle(trigger_reason)
                 last_run_time = datetime.now()
@@ -674,7 +713,6 @@ def start_daemon():
                 print(f"\n💤 Демон перешел в режим ожидания. Следующий плановый запуск в {(last_run_time + timedelta(hours=UPDATE_INTERVAL_HOURS)).strftime('%H:%M:%S')}")
                 print(f"👀 Мониторинг {ALL_SOURCES_FILE} продолжается...\n")
                 
-            # Короткий сон перед следующей проверкой файловой системы
             time.sleep(WATCHER_INTERVAL_SEC)
             
     finally:
