@@ -1,44 +1,9 @@
-hysteria2://7dd10318-28fd-413f-81f0-cd0a286e4779@flkf2.mangshe.xyz:2056/?insecure=1&sni=flkf2.mangshe.xyz
-hysteria2://a084933d-0b41-4571-ae0c-7163b8c71ed1@de.eyucdn.xyz:2056?insecure=1&sni=de.eyucdn.xyz
-hysteria2://b4bd0613-ff7c-4f2f-954d-185915e6ddad@5.175.249.174:35000?security=tls&obfs=salamander&obfs-password=%40JavidnamanIran-Javid-SHAH-KingRezaPahlavi&insecure=0&sni=api.kermanshahi.org
-hysteria2://b4bd0613-ff7c-4f2f-954d-185915e6ddad@77.90.41.197:35000?insecure=1&sni=api.kermanshahi.org&obfs=salamander&obfs-password=@JavidnamanIran-Javid-SHAH-KingRezaPahlavi
-hysteria2://zhangyang@130.61.50.75:6443?insecure=1&sni=dash.cloudflare.com
-ss://1596e7f0-2106-468f-e2b0-93f19e83bd0c@116.203.149.241:443?mode=gun&amp;security=reality&amp;encryption=none&amp;pbk=wxzZx9_9R0QXG4Hjc8e3_ckaUIbn9oKc5yKsBqh8ulc&amp;fp=firefox&amp;spx=%2F&amp;type=grpc&amp;serviceName=@ipV2Ray&amp;sni=greenpepper.ir&amp;sid=a18472f7
-ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpHIXlCd1BXSDNWYW8@141.95.0.23:810
-ss://YWVzLTI1Ni1jZmI6YXNkS2thc2tKS2Zuc2E@162.19.170.224:443
-ss://YWVzLTI1Ni1nY206VEV6amZBWXEySWp0dW9T@139.162.130.101:6679
-ss://YWVzLTI1Ni1nY206WTZSOXBBdHZ4eHptR0M@193.108.117.75:5001
-ss://YWVzLTI1Ni1nY206a0RXdlhZWm9UQmNHa0M0@145.239.1.100:8881
-trojan://byDSOLVPDd@47.245.158.76:49147?security=reality&pbk=kC0ruZ1MPr6xJlqxtX0R9IasI5wW4bJ8UqeGZWw1r30&headerType=none&fp=chrome&type=tcp&sni=play.google.com&sid=848ecf47e1b2
-trojan://q9870219@181.214.99.54:2035?security=tls&sni=ht.lljllj.buzz
-trojan://telegram-id-directvpn@18.198.110.94:22223?security=tls&alpn=http/1.1&headerType=none&type=tcp&sni=trojan.burgerip.co.uk
-trojan://telegram-id-privatevpns@18.185.219.138:22222?security=tls&alpn=http/1.1&headerType=none&type=tcp&sni=trojan.burgerip.co.uk
-trojan://telegram-id-privatevpns@18.193.207.240:22222?security=tls&alpn=http/1.1&headerType=none&type=tcp&sni=trojan.burgerip.co.uk
-trojan://telegram-id-privatevpns@3.127.30.45:22222?security=tls&sni=trj.rollingnext.co.uk&alpn=http/1.1&type=tcp
-vless://0132166f-e702-48ed-a9e7-b07af768faf8@45.159.219.251:8880/?type=ws&encryption=none&host=cf.d3z.net&path=🔒
-vless://05519058-d2ac-4f28-9e4a-2b2a1386749e@52.58.227.219:22224?type=ws&security=tls&path=/telegram-channel-vlessconfig&sni=trojan.burgerip.co.uk
-vless://0967ffed-a71d-424c-9917-cd2bd2b5b3d9@91.107.245.32:3419?security=none&encryption=none&host=bmi.ir&headerType=http&type=tcp
-vless://0e1d711d-fad0-4fcc-80cd-5fd7ecfa8b74@de-7.vpnd.io:16808?type=tcp&security=reality&encryption=none&pbk=bebtfBGmvDsd20joXrKBoFMth2M7qRYT200IRRWhDns&fp=random&sni=amazon.com&sid=3677ad&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://10371edf-4e5a-46a5-bd19-c301ce371d14@mail.norton-v.cfd:1517?security=&encryption=none&host=testspeed-foreign.tci.ir&headerType=http&type=tcp
-vless://108940ab-48de-4bee-a018-f9b9a36dd851@185.144.70.248:8443?encryption=none&flow=xtls-rprx-vision&fp=qq&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&security=reality&sid=6ba85179e30d4fc2&sni=ign.dev&type=tcp
-vless://12808e09-a11a-45b5-b299-191cda50f681@core.speedmizban.net:1517?security=&encryption=none&host=testspeed-foreign.tci.ir&headerType=http&type=tcp
-vless://24a4aa9b-b341-4717-9d4a-00d74c2b84e0@78.47.24.36:2020?security=none&encryption=none&headerType=none&type=tcp
-vless://3bf97509-bce0-46ba-b9ce-d4208e0ce136@sv4.fasdata.top:7323?security=&encryption=none&host=P30afzar.com&headerType=http&type=tcp
-vless://549ef7be-cffe-4f8d-bea4-3527f3c3c7f1@de-2.vpnd.io:39842?type=tcp&security=reality&encryption=none&pbk=s8KvnndyJdK9tYhHrjkA_7_yXmHaKlx8X2mcbwEIQUc&fp=random&sni=amazon.com&sid=ba51cd&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://7177231b-5db6-4393-a0c3-4d1adaa60b28@de-8.vpnd.io:27068?type=tcp&security=reality&encryption=none&pbk=f9NNo2u8WxhwZIyZxKDQB5AbY7cvE8Co0LNEwaFW31c&fp=random&sni=amazon.com&sid=5d56ff19&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://7b465890-fd43-4e20-bf71-be065688953d@de-3.vpnd.io:30300?type=tcp&security=reality&encryption=none&pbk=HSnydrYLbApjQXnTRvVY5eD7dWK8P00OhZidaVuzJ2A&fp=random&sni=amazon.com&sid=501e60&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://7d680304-b026-48fd-d8bf-6aa209b424c5@18.184.226.36:19592?security=none&encryption=none&headerType=none&type=tcp
-vless://8ba3c494-c5b9-46b0-9bb9-306b8fdeb9d7@91.107.169.188:25103/?type=tcp&encryption=none
-vless://c8898cfd-9927-4f36-b7bc-40de76076b80@91.238.82.242:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&security=tls&sni=🔒
-vless://d498e199-35ac-4289-9db7-dc59524e8c84@de-5.vpnd.io:43881?type=tcp&security=reality&encryption=none&pbk=0OjbaFdJ3LVEpRBR4dfX2dnZK5ZdBGK58lKbvPaABg8&fp=random&sni=amazon.com&sid=6b7294d7b5ec&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://e04012b1-5d37-46a2-9ca9-3b9e4a228a4e@de-6.vpnd.io:30284?type=tcp&security=reality&encryption=none&pbk=n34iNBCtpPaL8jbHYA1Qva5WC4q0QfcOHSUZgUtWYxc&fp=random&sni=amazon.com&sid=6be5&spx=%2F&flow=xtls-rprx-vision#%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%F0%9F%87%A9%F0%9F%87%AA
-vless://e89ba39d-ae7e-493a-a57b-cdd55b42b4e3@188.245.75.235:443?security=none&encryption=none&headerType=none&type=tcp
-vless://fca42527-0f5f-4227-9554-ba32702fe90c@18.185.60.252:443?security=&encryption=none&headerType=&type=tcp
-vless://fdfca0ba-1cb0-4369-a77c-92bb06d7528b@dea.cdn.stemstep.cloud:443?type=grpc&security=reality&encryption=none&fp=chrome&pbk=ZlKYQFA9US6B_avwfhkc1Q7HiFeM6Qwk3kavqr_X8SQ&sid=411b07ba270e5cca&sni=dea.cdn.stemstep.cloud&serviceName=vless-grpc-dea
-vmess://ewogICJhZGQiOiAiMTY3LjIzNS4yOC4xNTciLAogICJhaWQiOiAiMCIsCiAgImVuY3J5cHRpb24iOiAiYXV0byIsCiAgImhvc3QiOiAiIiwKICAiaWQiOiAiMzFmMWY4ZWEtZmQzOC00ZTYzLWI4MTgtYTQ5ZDQxNjgyMGJkIiwKICAibmV0IjogInRjcCIsCiAgInBhdGgiOiAiLyIsCiAgInBvcnQiOiAiNjM0NTYiLAogICJwcyI6ICJb8J+HqfCfh6pdIHRlbGVncmFtIEBwcnJvZmlsZV9wdXJwbGUiLAogICJzZWN1cml0eSI6ICJhdXRvIiwKICAic2tpcC1jZXJ0LXZlcmlmeSI6IGZhbHNlLAogICJ0bHMiOiAiIiwKICAidHlwZSI6ICJodHRwIiwKICAidXJsX2dyb3VwIjogInYycmF5IiwKICAidiI6ICIyIgp9😉
-vmess://eyJhZGQiOiAiMTMwLjE2Mi40Ny4xMjMiLCAiYWlkIjogMCwgImhvc3QiOiAiIiwgImlkIjogImI1ZjdlOTMyLWY3MzAtNGFkMi1iNDI1LTQwOTc3YjlkYjMzMiIsICJuZXQiOiAid3MiLCAicGF0aCI6ICIvekJMUG91IiwgInBvcnQiOiA2ODU0LCAicHMiOiAiNEtpYW4tMTI4MzAiLCAic2VjdXJpdHkiOiAiYXV0byIsICJza2lwLWNlcnQtdmVyaWZ5IjogdHJ1ZSwgInNuaSI6ICIiLCAidGxzIjogInRscyIsICJ0eXBlIjogImF1dG8ifQ==
-vmess://eyJhZGQiOiAiMTY1LjIyNy4xNzUuODgiLCAiYWlkIjogIjAiLCAiaG9zdCI6ICIiLCAiaWQiOiAiZWJhOGNjZjUtNWFiOS00YjZiLWRlNGItODNhYjkyMGMxMDA1IiwgIm5ldCI6ICJ3cyIsICJwYXRoIjogIi8iLCAicG9ydCI6ICIyODE2NCIsICJwcyI6ICI0S2lhbi0xMzI0NiIsICJzY3kiOiAiYXV0byIsICJzbmkiOiAiIiwgInRscyI6ICIiLCAidHlwZSI6ICJub25lIiwgInYiOiAiMiJ9
-vmess://eyJhZGQiOiAiMTkzLjEyMi41OC4xNTgiLCAiYWlkIjogMCwgImhvc3QiOiAiaXJ2aWRlby5jZmQiLCAiaWQiOiAiZTUzN2YyZjUtMmEwYy00ZjU5LTkyYzktODMyY2E2NDMzYmYzIiwgIm5ldCI6ICJ3cyIsICJwYXRoIjogIi8iLCAicG9ydCI6IDQ0MywgInBzIjogIjRLaWFuLTE0MjA0IiwgInNlY3VyaXR5IjogImF1dG8iLCAic2tpcC1jZXJ0LXZlcmlmeSI6IHRydWUsICJzbmkiOiAiIiwgInRscyI6ICJ0bHMiLCAidHlwZSI6ICJhdXRvIn0=
+vless://0e1d711d-fad0-4fcc-80cd-5fd7ecfa8b74@de-7.vpnd.io:16808?type=tcp&security=reality&encryption=none&pbk=bebtfBGmvDsd20joXrKBoFMth2M7qRYT200IRRWhDns&fp=random&sni=amazon.com&sid=3677ad&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
+vless://549ef7be-cffe-4f8d-bea4-3527f3c3c7f1@de-2.vpnd.io:39842?type=tcp&security=reality&encryption=none&pbk=s8KvnndyJdK9tYhHrjkA_7_yXmHaKlx8X2mcbwEIQUc&fp=random&sni=amazon.com&sid=ba51cd&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
+vless://7177231b-5db6-4393-a0c3-4d1adaa60b28@de-8.vpnd.io:27068?type=tcp&security=reality&encryption=none&pbk=f9NNo2u8WxhwZIyZxKDQB5AbY7cvE8Co0LNEwaFW31c&fp=random&sni=amazon.com&sid=5d56ff19&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
+vless://7b465890-fd43-4e20-bf71-be065688953d@de-3.vpnd.io:30300?type=tcp&security=reality&encryption=none&pbk=HSnydrYLbApjQXnTRvVY5eD7dWK8P00OhZidaVuzJ2A&fp=random&sni=amazon.com&sid=501e60&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
+vless://d498e199-35ac-4289-9db7-dc59524e8c84@de-5.vpnd.io:43881?type=tcp&security=reality&encryption=none&pbk=0OjbaFdJ3LVEpRBR4dfX2dnZK5ZdBGK58lKbvPaABg8&fp=random&sni=amazon.com&sid=6b7294d7b5ec&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
+vless://e04012b1-5d37-46a2-9ca9-3b9e4a228a4e@de-6.vpnd.io:30284?type=tcp&security=reality&encryption=none&pbk=n34iNBCtpPaL8jbHYA1Qva5WC4q0QfcOHSUZgUtWYxc&fp=random&sni=amazon.com&sid=6be5&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
 
-# Total: 41
-# Updated: 2026-02-21 11:04:43
+# Total Active: 6
+# Synced: 2026-02-21 11:28:42
