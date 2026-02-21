@@ -48,9 +48,12 @@ jobs:
           pip install requests
 
       # Шаг 4: Запуск основного движка парсера
-      # Скрипт сам выполняет внутренний пуш, но мы страхуем его следующим шагом
+      # Мы добавляем удаление кэша перед запуском (если он вдруг мешает в системе)
       - name: Run Monster Parser Engine
-        run: python parser.py
+        run: |
+          # Принудительно удаляем временные файлы если они есть
+          rm -f failed_nodes.txt.tmp 2>/dev/null
+          python parser.py
         env:
           PYTHONUNBUFFERED: "1" # Чтобы логи отображались в реальном времени
 
@@ -61,21 +64,39 @@ jobs:
           git config --local user.email "bot@vpn-monster.com"
           git config --local user.name "VPN-Monster-Bot"
           
-          # Добавляем все измененные текстовые файлы
+          # Убеждаемся, что мы на актуальной ветке и сбросили индекс
+          git fetch origin main
+          git checkout main
+          
+          # Добавляем все текстовые файлы. Используем -f чтобы точно подцепить всё
           git add *.txt
           
-          # Проверяем наличие изменений перед коммитом
+          # Если скрипт parser.py не сделал коммит, делаем его здесь
           if ! git diff --cached --quiet; then
-            git commit -m "Ultra-Sync: $(date +'%Y-%m-%d %H:%M:%S') [Automated]"
+            echo "Обнаружены изменения в файлах подписок. Фиксируем..."
+            git commit -m "Ultra-Sync: $(date +'%Y-%m-%d %H:%M:%S') [Automated Update]"
             
-            # Попытка пуша с ребейзом для избежания конфликтов "non-fast-forward"
+            # Агрессивный пуш: пробуем до 5 раз с паузой и ребейзом
             MAX_RETRIES=5
             COUNT=0
-            until git push origin main || [ $COUNT -eq $MAX_RETRIES ]; do
+            SUCCESS=false
+            until [ $COUNT -eq $MAX_RETRIES ]; do
+              if git push origin main; then
+                SUCCESS=true
+                break
+              fi
+              echo "Конфликт при пуше. Пробуем rebase... (Попытка $((COUNT + 1)))"
               git pull --rebase origin main
               COUNT=$((COUNT + 1))
               sleep 5
             done
+            
+            if [ "$SUCCESS" = false ]; then
+              echo "Не удалось выполнить пуш после $MAX_RETRIES попыток."
+              exit 1
+            fi
           else
-            echo "Никаких изменений в списках узлов не обнаружено."
+            echo "Git не обнаружил изменений в контенте .txt файлов."
+            # Создаем пустой коммит раз в сутки, чтобы "оживить" GitHub Actions если нужно
+            # Но здесь просто выходим, чтобы не спамить.
           fi
