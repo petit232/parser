@@ -1,63 +1,81 @@
-name: VPN Monster Auto-Update
+name: VPN Monster Auto-Update Ultimate
 
 on:
-  # 1. МГНОВЕННОЕ ОБНОВЛЕНИЕ: срабатывает, как только ты меняешь ссылки или сам скрипт
+  # 1. МГНОВЕННОЕ ОБНОВЛЕНИЕ: срабатывает при любом изменении ссылок или логики парсера
   push:
+    branches:
+      - main
     paths:
       - 'all_sources.txt'
       - 'parser.py'
+      - '.github/workflows/monster_updater.yml'
   
-  # 2. АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ: запускается ровно каждые 6 часов
+  # 2. АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ: запуск каждые 6 часов (стандарт для поддержания актуальности)
   schedule:
     - cron: '0 */6 * * *'
   
-  # 3. РУЧНОЙ ЗАПУСК: добавляет кнопку "Run workflow" в интерфейсе GitHub (вкладка Actions)
+  # 3. РУЧНОЙ ЗАПУСК: добавляет кнопку "Run workflow" во вкладке Actions
   workflow_dispatch:
 
 jobs:
   build:
+    name: Sync and Update Nodes
     runs-on: ubuntu-latest
     
-    # КРИТИЧЕСКИ ВАЖНО: Разрешает боту перезаписывать .txt файлы и пушить их обратно в твой репозиторий
+    # Разрешения на запись контента обязательны для работы бота с файлами
     permissions:
-      contents: write 
+      contents: write
 
     steps:
-      # Шаг 1: Получаем файлы из твоего репозитория
+      # Шаг 1: Инициализация репозитория. fetch-depth: 0 нужен для корректного pull/rebase
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Загружает историю, чтобы git pull/rebase работал без ошибок
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Шаг 2: Устанавливаем Python
+      # Шаг 2: Настройка стабильной версии Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip' # Кэширование зависимостей для ускорения запусков
 
-      # Шаг 3: Устанавливаем нужные библиотеки (requests нужен для парсинга и GeoIP)
+      # Шаг 3: Установка зависимостей с проверкой обновлений
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests
 
-      # Шаг 4: Запускаем наш главный скрипт
-      - name: Run Monster Parser
+      # Шаг 4: Запуск основного движка парсера
+      # Скрипт сам выполняет внутренний пуш, но мы страхуем его следующим шагом
+      - name: Run Monster Parser Engine
         run: python parser.py
+        env:
+          PYTHONUNBUFFERED: "1" # Чтобы логи отображались в реальном времени
 
-      # Шаг 5: Страховочный Commit & Push 
-      # (Python-скрипт делает пуш сам, но если он прервется, GitHub Actions гарантированно сохранит файлы)
-      - name: Fallback Commit and Push
+      # Шаг 5: Финальная синхронизация (Fallback Sync)
+      # Если скрипт отработал, но не смог запушить, этот шаг гарантирует сохранность данных
+      - name: Final Git Sync and Push
         run: |
           git config --local user.email "bot@vpn-monster.com"
           git config --local user.name "VPN-Monster-Bot"
+          
+          # Добавляем все измененные текстовые файлы
           git add *.txt
           
-          # Пытаемся сделать коммит. Если изменений нет, игнорируем ошибку
-          git commit -m "Auto-Update: $(date)" || echo "No changes to commit"
-          
-          # Подтягиваем возможные изменения (чтобы избежать конфликтов)
-          git pull --rebase origin main || echo "Nothing to pull"
-          
-          # Пушим готовые файлы в репозиторий
-          git push origin main || echo "Nothing to push"
+          # Проверяем наличие изменений перед коммитом
+          if ! git diff --cached --quiet; then
+            git commit -m "Ultra-Sync: $(date +'%Y-%m-%d %H:%M:%S') [Automated]"
+            
+            # Попытка пуша с ребейзом для избежания конфликтов "non-fast-forward"
+            MAX_RETRIES=5
+            COUNT=0
+            until git push origin main || [ $COUNT -eq $MAX_RETRIES ]; do
+              git pull --rebase origin main
+              COUNT=$((COUNT + 1))
+              sleep 5
+            done
+          else
+            echo "Никаких изменений в списках узлов не обнаружено."
+          fi
