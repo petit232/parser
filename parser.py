@@ -676,7 +676,7 @@ def start_daemon():
     print(f"🛡️ VPN MONSTER DAEMON ЗАПУЩЕН И АКТИВЕН 🛡️")
     print(f"Интервал обновлений: {UPDATE_INTERVAL_HOURS} час (Дробное обновление базы)")
     print(f"Мониторинг файла '{ALL_SOURCES_FILE}' включен.")
-    print(f"Нажмите Ctrl+C для безопасной остановки.")
+  print(f"Нажмите Ctrl+C для безопасной остановки.")
     print(f"{'*'*70}\n")
     
     last_run_time = datetime.min
@@ -696,7 +696,7 @@ def start_daemon():
             if current_mod_time > last_sources_mod_time:
                 trigger_reason = f"Обнаружены изменения в {ALL_SOURCES_FILE}"
                 last_sources_mod_time = current_mod_time
-                
+            
             if trigger_reason:
                 run_update_cycle(trigger_reason)
                 last_run_time = datetime.now()
@@ -706,7 +706,7 @@ def start_daemon():
                 if SHOULD_EXIT: break
                 print(f"\n💤 Демон перешел в режим ожидания. Следующий плановый запуск в {(last_run_time + timedelta(hours=UPDATE_INTERVAL_HOURS)).strftime('%H:%M:%S')}")
                 print(f"👀 Мониторинг {ALL_SOURCES_FILE} продолжается...\n")
-                
+            
             time.sleep(WATCHER_INTERVAL_SEC)
             
     finally:
