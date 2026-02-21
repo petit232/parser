@@ -15,3 +15,4 @@ https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main
 https://193.47.42.109:2096/sub/xe1bbegxhh7h9ah4
 https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/BY.txt
 https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/LT.txt
+https://raw.githubusercontent.com/petit232/parser/refs/heads/main/germany.txt?token=GHSAT0AAAAAADSZ4KUQXRQK3TCRX6BC76GG2MZNT6Q
