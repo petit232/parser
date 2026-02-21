@@ -19,7 +19,7 @@ PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic
 
 def decode_base64(data):
     try:
-        # Пробуем декодировать, если это base64 подписка
+        data = data.strip()
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
@@ -30,7 +30,7 @@ def decode_base64(data):
 def clean_name(config_line):
     if '#' in config_line:
         base_link, name = config_line.split('#', 1)
-        # Убираем мусор, рекламу и лишние символы
+        # Убираем мусор, рекламу и лишние символы из названия
         name = re.sub(r'(@[\w\d_]+|http\S+|www\S+|\.com|\.net|\.org|:[0-9]+)', '', name)
         name = name.replace('_', ' ').replace('-', ' ').strip()
         return base_link, name
@@ -44,42 +44,54 @@ def get_protocol(link):
 
 def process():
     all_raw_data = []
+    source_file = 'all_sources.txt'
 
-    # Читаем из локального файла
-    if os.path.exists('sources/my_links.txt'):
-        with open('sources/my_links.txt', 'r', encoding='utf-8') as f:
-            all_raw_data.extend(f.readlines())
+    if not os.path.exists(source_file):
+        print(f"Файл {source_file} не найден! Создай его в корне.")
+        return
 
-    # Читаем из внешних ссылок
-    if os.path.exists('sources/external_urls.txt'):
-        with open('sources/external_urls.txt', 'r', encoding='utf-8') as f:
-            for url in f:
-                url = url.strip()
-                if url:
-                    try:
-                        resp = requests.get(url, timeout=15)
-                        content = decode_base64(resp.text)
-                        all_raw_data.extend(content.splitlines())
-                    except:
-                        print(f"Не удалось загрузить: {url}")
+    # Читаем единый файл источников
+    with open(source_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    for line in lines:
+        line = line.strip()
+        if not line: continue
+
+        # Если это прямая ссылка на VPN (vless:// и т.д.)
+        if any(proto in line.lower() for proto in PROTOCOLS):
+            all_raw_data.append(line)
+        
+        # Если это HTTP ссылка на внешнюю подписку
+        elif line.startswith("http"):
+            try:
+                resp = requests.get(line, timeout=15)
+                content = decode_base64(resp.text)
+                all_raw_data.extend(content.splitlines())
+            except:
+                print(f"Не удалось загрузить подписку: {line}")
 
     structured_data = {country: set() for country in COUNTRIES}
     mix_data = set()
-    unique_check = set()
+    unique_check = set() # Сюда пишем адреса серверов для удаления дублей
 
-    for line in all_raw_data:
-        line = line.strip()
-        if not any(proto in line.lower() for proto in PROTOCOLS):
+    for config in all_raw_data:
+        config = config.strip()
+        if not any(proto in config.lower() for proto in PROTOCOLS):
             continue
 
-        base_link, name = clean_name(line)
+        base_link, name = clean_name(config)
         
-        # Убираем дубли по адресу сервера
-        if base_link in unique_check:
-            continue
-        unique_check.add(base_link)
+        # Жесткая проверка на дубликаты (по адресу сервера)
+        # Отрезаем всё после протокола до знака # или ? чтобы получить уникальный хост
+        server_match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', base_link)
+        if server_match:
+            server_address = server_match.group(2)
+            if server_address in unique_check:
+                continue
+            unique_check.add(server_address)
 
-        # Агрессивный поиск
+        # Сортировка по странам
         for country, info in COUNTRIES.items():
             match = False
             search_area = (name + base_link).lower()
@@ -90,8 +102,8 @@ def process():
             
             if match:
                 proto_name = get_protocol(base_link)
-                # Дизайн: ❤️ [Эмодзи] Страна | Протокол | № ❤️
                 counter = len(structured_data[country]) + 1
+                # Дизайн: ❤️ [Эмодзи] Страна | Протокол | № ❤️
                 beauty_name = f"❤️ {info['flag']} {country.capitalize()} | {proto_name} | {counter} ❤️"
                 final_link = f"{base_link}#{beauty_name}"
                 
@@ -99,7 +111,12 @@ def process():
                 mix_data.add(final_link)
                 break
 
-    # Сохраняем результат
+    # Удаляем старые файлы перед записью
+    for f in os.listdir('.'):
+        if f.endswith('.txt') and f not in ['all_sources.txt', 'requirements.txt']:
+            os.remove(f)
+
+    # Сохраняем новые результаты
     for country, configs in structured_data.items():
         if configs:
             with open(f"{country}.txt", 'w', encoding='utf-8') as f:
@@ -108,6 +125,7 @@ def process():
     if mix_data:
         with open("mix.txt", 'w', encoding='utf-8') as f:
             f.write("\n".join(mix_data))
+        print(f"Парсинг окончен. Уникальных серверов: {len(mix_data)}")
 
 if __name__ == "__main__":
     process()
