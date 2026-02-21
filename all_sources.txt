@@ -1,7 +1,6 @@
 https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/main/all_extracted_configs.txt
 https://raw.githubusercontent.com/Danialsamadi/v2go/main/AllConfigsSub.txt
 https://raw.githubusercontent.com
-/ShatakVPN/ConfigForge-V2Ray/refs/heads/main/configs/br/vless.txt
 https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
 https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS_mobile.txt
 https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt
