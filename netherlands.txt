@@ -62,4 +62,4 @@ vless://f59916ed-86b0-4ca0-8652-4d99ef6db46d@nl.ir.netlinr.ir:443?security=none&
 vless://f929cc78-e2a1-4ce3-8051-3e9538405144@104.17.254.236:80/?type=ws&encryption=none&flow=&host=netherlands.padoamu.workers.dev&path=%2F%40WireXnet%3Fed%3D2048
 vless://faefbd75-9a1c-4bbf-9b90-816966ecf554@172.66.40.99:8880?path=/datax?ed=2560&security=none&encryption=none&host=amsterdam.11.v.www.speedtest.net.nestle.ir.ftp.debian.org.tmo.docb.datax.click.dataxshop.ir&type=httpupgrade
 
-# Last Update: 2026-02-21 09:23:35
+# Last Update: 2026-02-21 09:24:12

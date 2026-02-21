@@ -3,4 +3,4 @@ ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpVenRIR3c3b3FzZ0NnUTZFdmxYbFNt@kazakhstan28.c
 ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpndmFVQzBJS0FDbm84cDA1RllaTG9N@kazakhstan25.clearorbitllc.com:52323
 vless://cfa8156d-32a6-4408-8e6a-226d2f212f04@172.66.213.38:2087/?type=grpc&encryption=none&serviceName=Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA-Telegram%3A%40Cephalon_ALA&security=tls&sni=🔒
 
-# Last Update: 2026-02-21 09:23:35
+# Last Update: 2026-02-21 09:24:12

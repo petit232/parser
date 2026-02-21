@@ -34,4 +34,4 @@ vless://eb071647-72a6-46be-8e89-ff3d228d52f6@de.cdn.stun.su:443?allowInsecure=0&
 vless://f2a72ad0-d23f-4eed-96cb-7d970b1e784d@141.101.121.110:80/?type=ws&encryption=none&host=ov-germany1.09vpn.com&path=🔒
 vless://f3de5b41-e517-4b49-852e-4d0ee40d4a18@frankfurt.just-server.ru:4443?security=reality&encryption=none&pbk=DLqBw8458S7vERpm_w4NMGz1kNp7b7uIjwCgStZERyo&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=sun6-21.userapi.com
 
-# Last Update: 2026-02-21 09:23:35
+# Last Update: 2026-02-21 09:24:12
