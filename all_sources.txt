@@ -9,7 +9,20 @@ https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/refs/heads/main/
 https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/LT.txt
 https://netz.tg/7RGK_qRth9uQSAFP
 https://vpnd.io/subscription/vless/16b54f1014e6
-
+https://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt?token=GHSAT0AAAAAADSZ4KURMOPVQ7MNSMCIVFKU2MZRHRQ
+https://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt?token=GHSAT0AAAAAADSZ4KUQXDZ46GF6T64KCHNA2MZN6YA
+https://raw.githubusercontent.com/petit232/parser/refs/heads/main/germany.txt?token=GHSAT0AAAAAADSZ4KUQXRQK3TCRX6BC76GG2MZNT6Q
+https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/LT.txt
+https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/BY.txt
+https://193.47.42.109:2096/sub/xe1bbegxhh7h9ah4
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-all.txt
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-checked.txt
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_SS%2BAll_RUS.txt
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS_mobile.txt
+https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
+https://raw.githubusercontent.com/ShatakVPN/ConfigForge-V2Ray/refs/heads/main/configs/br/vless.txt
+https://vpnd.io/subscription/vless/16b54f1014e6895619ccf4017570599e0cde7df882ee2d86b348f587e7d9e12a
 
 mess://eyJhZGQiOiAiNDcuMjUxLjkxLjI0MSIsICJhaWQiOiAiMCIsICJhbHBuIjogIiIsICJmcCI6ICIiLCAiaG9zdCI6ICIiLCAiaWQiOiAiMDkyNWIzNTUtMmJjZC00ZWFlLTk3MjAtZDI3MDllNGY3ZTM2IiwgIm5ldCI6ICJ0Y3AiLCAicGF0aCI6ICIiLCAicG9ydCI6IDQyODk5LCAicHMiOiAiQGNoaWxsZ3V5X3ZwbiIsICJzY3kiOiAiYXV0byIsICJzbmkiOiAiIiwgInRscyI6ICIiLCAidHlwZSI6ICJub25lIiwgInYiOiAiMiIsICJuYW1lIjogIj4+QG91dGxpbmVfdnBuOjpYWDo6WFg6OlhYOjpYWDo6WFg6OlhYOjpYWDo6WFg6OlhYOjpYWDo6WFg6OlhYIn0=
 vmess://eyJ2IjogIjIiLCAicHMiOiAiQGNoaWxsZ3V5X3ZwbiIsICJhZGQiOiAiMTg1LjEwNC4xODkuMzgiLCAicG9ydCI6IDgwLCAiaWQiOiAiNDNkY2RjZTEtM2NlYS00MTkzLWJjOGQtOTBiOTIwNzFkNzc5IiwgImFpZCI6ICIwIiwgInNjeSI6ICJhdXRvIiwgIm5ldCI6ICJ3cyIsICJ0eXBlIjogIm5vbmUiLCAiaG9zdCI6ICIiLCAicGF0aCI6ICIiLCAidGxzIjogIiIsICJzbmkiOiAiIiwgImFscG4iOiAiIiwgImZwIjogIiIsICJuYW1lIjogIlx1MDZhOVx1MDYyN1x1MDY0Nlx1MDYyN1x1MDY0NCBcdTA2MmFcdTA2NDRcdTA2YWZcdTA2MzFcdTA2MjdcdTA2NDUgOiBGcmVlX1ZQTl9DSEAifQ==
