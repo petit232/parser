@@ -37,7 +37,6 @@ GEOIP_LIMIT_PER_RUN = 10000     # Жесткий лимит GeoIP (защита 
 # --- ФАЙЛОВАЯ СИСТЕМА ---
 LOCK_FILE = "monster_daemon.lock"
 PERSISTENT_BLACKLIST = "persistent_blacklist.txt"
-PROCESSED_SOURCES_FILE = "processed_sources.dat"
 ALL_SOURCES_FILE = "all_sources.txt"
 MONSTER_STATE_FILE = "monster_state.json"  # УМНАЯ ПАМЯТЬ: хранит статус и время проверки узлов
 
@@ -67,7 +66,7 @@ IP_CACHE = {}
 CACHE_LOCK = threading.Lock()
 BLACKLIST_CACHE = set()
 BLACKLIST_LOCK = threading.Lock()
-SHOULD_EXIT = False 
+SHOULD_EXIT = False
 
 # ==============================================================================
 # --- СИСТЕМНЫЕ ФУНКЦИИ И ОБРАБОТЧИКИ ---
@@ -141,7 +140,7 @@ def save_state(state):
 def sync_caches_with_master(master_set):
     """
     ИДЕАЛЬНОЕ ЗЕРКАЛО: Вычищает кэш IP и файл состояний от мусора.
-    Если узел пропал из all_sources.txt, он мгновенно и навсегда удаляется отовсюду.
+    Если узел пропал из all_sources.txt или из внешних ссылок, он мгновенно и навсегда удаляется отовсюду.
     """
     print(f"🧹 Синхронизация кэша. Поиск удаленных подписок и призраков...", flush=True)
     
@@ -211,7 +210,7 @@ def beautify_config(config, country_key=None, fallback_code="UN"):
         else:
             code = fallback_code if fallback_code else "UN"
             label = f"❤️ 🌍 Global | {code} 🌍 ❤️"
-        
+            
         if config.startswith("vmess://"):
             clean_config = config.split('#')[0]
             decoded = decode_base64(clean_config[8:])
@@ -258,7 +257,7 @@ def check_ip_location_smart(host):
     if SHOULD_EXIT: return None
     with CACHE_LOCK:
         if host in IP_CACHE: return IP_CACHE[host]
-    
+        
     time.sleep(random.uniform(0.1, 0.5))
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
@@ -272,7 +271,7 @@ def check_ip_location_smart(host):
                 with CACHE_LOCK: IP_CACHE[host] = code
                 return code
         except: continue
-    
+        
     with CACHE_LOCK: IP_CACHE[host] = "UN"
     return "UN"
 
@@ -297,7 +296,7 @@ def load_persistent_blacklist():
                                 bl.add(node_id)
                         except: pass
         except: pass
-    
+        
     with BLACKLIST_LOCK:
         global BLACKLIST_CACHE
         BLACKLIST_CACHE = bl.copy()
@@ -343,7 +342,7 @@ def deep_purge_files(dead_configs):
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-            
+                
             clean_lines = []
             file_changed = False
             
@@ -352,7 +351,7 @@ def deep_purge_files(dead_configs):
                 if not l_strip or l_strip.startswith('#'):
                     clean_lines.append(line)
                     continue
-                
+                    
                 # Обработка Base64 внутри all_sources.txt
                 if not any(p in l_strip for p in ALLOWED_PROTOCOLS):
                     decoded = decode_base64(l_strip)
@@ -373,7 +372,7 @@ def deep_purge_files(dead_configs):
                     purged_total += 1
                 else:
                     clean_lines.append(line)
-            
+                    
             if file_changed:
                 atomic_save(filepath, "".join(clean_lines))
                 
@@ -382,21 +381,6 @@ def deep_purge_files(dead_configs):
             
     if purged_total > 0:
         print(f"🗑️ DEEP PURGE: Вырезано {purged_total} упоминаний мертвых узлов из источников.")
-
-def load_processed_sources():
-    """Хеши уже спарсенных внешних ссылок."""
-    if os.path.exists(PROCESSED_SOURCES_FILE):
-        try:
-            with open(PROCESSED_SOURCES_FILE, 'r') as f:
-                return set([line.strip() for line in f if line.strip()])
-        except: return set()
-    return set()
-
-def save_processed_source_hash(url):
-    h = hashlib.sha256(url.encode()).hexdigest()
-    try:
-        with open(PROCESSED_SOURCES_FILE, 'a') as f: f.write(h + "\n")
-    except: pass
 
 # ==============================================================================
 # --- ВОРКЕРЫ ДЛЯ МНОГОПОТОЧНОСТИ ---
@@ -436,8 +420,8 @@ def generate_static_links():
     """Абсолютно статические ссылки на подписки (Авто-генератор)."""
     print("\n🔗 Обновление статических ссылок клиента...", flush=True)
     try:
-        remote_url = subprocess.run(["git", "config", "--get", "remote.origin.url"], 
-                                   capture_output=True, text=True).stdout.strip()
+        remote_url = subprocess.run(["git", "config", "--get", "remote.origin.url"],
+                                    capture_output=True, text=True).stdout.strip()
         
         if not remote_url:
             raw_base = "https://raw.githubusercontent.com/USER/REPO/main/"
@@ -445,7 +429,7 @@ def generate_static_links():
             raw_base = remote_url.replace("github.com", "raw.githubusercontent.com").replace(".git", "")
             if "raw.githubusercontent.com" in raw_base:
                 raw_base += "/main/"
-        
+                
         links = []
         links.append(f"🚀 MONSTER VPN PRO SUBSCRIPTIONS 🚀\n")
         links.append(f"🔥 MIX (Text): {raw_base}mix.txt")
@@ -453,7 +437,7 @@ def generate_static_links():
         links.append("🌍 --- BY COUNTRIES --- 🌍")
         for c in COUNTRIES:
             links.append(f"{c.upper()}: {raw_base}{c}.txt")
-        
+            
         atomic_save("LINKS_FOR_CLIENTS.txt", "\n".join(links))
         print("✅ LINKS_FOR_CLIENTS.txt актуализирован.")
     except Exception as e:
@@ -471,7 +455,7 @@ def git_commit_push():
         if not status:
             print("[Git Sync] Изменений в базе нет. Пуш не требуется.")
             return
-
+            
         timestamp = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         subprocess.run(["git", "commit", "-m", f"⚡ Auto-Sync Monster Engine: {timestamp}"], check=True)
         
@@ -541,10 +525,10 @@ def run_update_cycle(trigger_reason="Таймер"):
     print(f"{'='*70}\n")
     
     load_persistent_blacklist()
-    processed_hashes = load_processed_sources()
     
     raw_configs = set()
     new_sources = []
+    seen_urls = set() # Заменяет "вечный кэш". Теперь подписки парсятся ВСЕГДА свежие
     
     # 1. Читаем локальные источники (Сырые данные)
     if os.path.exists(ALL_SOURCES_FILE):
@@ -554,15 +538,15 @@ def run_update_cycle(trigger_reason="Таймер"):
                 if not l_strip or l_strip.startswith('#'): continue
                 
                 if l_strip.startswith('http'):
-                    h = hashlib.sha256(l_strip.encode()).hexdigest()
-                    if h not in processed_hashes:
+                    if l_strip not in seen_urls:
+                        seen_urls.add(l_strip)
                         new_sources.append(l_strip)
                 elif any(p in l_strip for p in ALLOWED_PROTOCOLS):
                     raw_configs.add(l_strip)
                     
-    # 2. Парсинг внешних ссылок (Дополняем Мастер-Лист)
+    # 2. Парсинг внешних ссылок (Дополняем Мастер-Лист каждый раз заново)
     if new_sources:
-        print(f"📡 Загрузка {len(new_sources)} новых внешних источников...", flush=True)
+        print(f"📡 Загрузка {len(new_sources)} внешних источников (Скачивание свежих данных)...", flush=True)
         for url in new_sources:
             if SHOULD_EXIT: break
             try:
@@ -572,10 +556,9 @@ def run_update_cycle(trigger_reason="Таймер"):
                 if not any(p in text for p in ALLOWED_PROTOCOLS):
                     decoded = decode_base64(text)
                     if decoded: text = decoded
-                
+                    
                 pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
                 for cfg in re.findall(pattern, text): raw_configs.add(cfg)
-                save_processed_source_hash(url)
             except Exception as e:
                 print(f"  [!] Ошибка парсинга {url}: {e}")
 
@@ -585,21 +568,25 @@ def run_update_cycle(trigger_reason="Таймер"):
     if not master_set:
         print("⚠️ Мастер-Лист пуст. Зачистка базы и выход.")
         sync_caches_with_master(set())
-        save_and_organize([], [], [])
+        save_and_organize([], [])
         git_commit_push()
         return
 
-    # 3. Идеальное Зеркало: Очистка кэшей и состояний от удаленных конфигов
+    # 3. Идеальное Зеркало: Очистка кэшей и состояний от удаленных конфигов (моментальная реакция)
     state = sync_caches_with_master(set(master_set))
 
     # 4. Дробная проверка (Chunking): Берем 1/24 часть самых старых узлов
     chunk_size = max(500, len(master_set) // HOURS_TO_COMPLETE_CYCLE)
     
+    # Если запущены через GitHub Actions вручную (Push), проверяем всё, что нужно
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        chunk_size = max(1500, len(master_set) // 4) # В Actions берем чанки больше, чтобы проверять быстрее
+        
     # Сортируем: сначала те, у кого last_checked меньше (самые старые) или вообще 0 (новые)
     sorted_master = sorted(master_set, key=lambda c: state.get(c, {}).get('last_checked', 0))
     chunk_to_check = sorted_master[:chunk_size]
     
-    print(f"⚖️ Чанкинг: Выбрано {len(chunk_to_check)} конфигов для проверки в этом часу.")
+    print(f"⚖️ Чанкинг: Выбрано {len(chunk_to_check)} конфигов для проверки в этом цикле.")
 
     # 5. Фаза TCP Ping для выбранного Чанка
     dead_configs_for_purge = []
@@ -666,11 +653,18 @@ def run_update_cycle(trigger_reason="Таймер"):
     print(f"\n🏁 ЦИКЛ УСПЕШНО ЗАВЕРШЕН ЗА {datetime.now() - start_time}.")
 
 # ==============================================================================
-# --- ДЕМОН-ПЕТЛЯ (DAEMON LOOP) С AUTO-TRIGGER ---
+# --- ДЕМОН-ПЕТЛЯ (DAEMON LOOP) С AUTO-TRIGGER И ПОДДЕРЖКОЙ GITHUB ACTIONS ---
 # ==============================================================================
 
 def start_daemon():
-    """Бесконечный цикл работы демона."""
+    """Бесконечный цикл работы демона, или одиночный запуск для GitHub Actions."""
+    
+    # ИНТЕГРАЦИЯ ДЛЯ GITHUB ACTIONS: Запускаем один цикл и выходим.
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print("\n[GITHUB ACTIONS] Обнаружена среда CI/CD. Выполнение полного одиночного цикла...")
+        run_update_cycle("Автоматический запуск GitHub Actions (Cron/Push)")
+        return
+
     if os.path.exists(LOCK_FILE):
         print(f"[КРИТ] Обнаружен файл {LOCK_FILE}. Демон уже запущен или был прерван.")
         print("Удалите lock-файл вручную, если уверены, что процесс не дублируется.")
