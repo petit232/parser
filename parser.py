@@ -11,6 +11,7 @@ import signal
 import sys
 import gc
 from datetime import datetime
+from collections import defaultdict
 
 # --- КОНФИГУРАЦИЯ СТРАН ---
 # Словарь для сопоставления кодов стран с именами файлов и эмодзи флагами.
@@ -89,7 +90,7 @@ def get_server_info(config):
     return None, None
 
 def check_ip_location(host):
-    """Определяет страну IP-адреса через сервис ip-api.com."""
+    """Определяет страну IP-адреса через сервис ip-api.com с соблюдением лимитов."""
     global UNRESOLVED_COUNT, PROCESSED_COUNT
     
     if SHOULD_EXIT: 
@@ -99,21 +100,24 @@ def check_ip_location(host):
         if host in IP_CACHE:
             return IP_CACHE[host]
 
-    # Базовая валидация хоста
+    # Базовая валидация хоста (не пустой, не локальный)
     if not host or len(host) < 3 or host.startswith("127.") or "localhost" in host:
         return None
 
-    url = f"http://ip-api.com/json/{host}?fields=status,countryCode"
+    # API ip-api.com: 45 запросов в минуту для бесплатного плана
+    url = f"http://ip-api.com/json/{host}?fields=status,message,countryCode"
     
-    for attempt in range(2):
+    for attempt in range(3): # Увеличили количество попыток
         if SHOULD_EXIT: break
         try:
-            # Рандомизированная пауза ~1.4с для соблюдения лимитов (45 зап/мин)
-            time.sleep(random.uniform(1.35, 1.65)) 
-            resp = requests.get(url, timeout=10)
+            # Рандомизированная пауза ~1.5с для строгого соблюдения лимитов
+            time.sleep(random.uniform(1.4, 1.7)) 
+            resp = requests.get(url, timeout=12)
             
             if resp.status_code == 429:
-                time.sleep(20)
+                # Если поймали Rate Limit, ждем значительно дольше
+                print(f"(!) Rate Limit достигнут. Ожидание 30 секунд...")
+                time.sleep(30)
                 continue
                 
             if resp.status_code == 200:
@@ -123,12 +127,16 @@ def check_ip_location(host):
                     with CACHE_LOCK:
                         IP_CACHE[host] = code
                         PROCESSED_COUNT += 1
-                        if PROCESSED_COUNT % 20 == 0:
-                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Прогресс GeoIP: {PROCESSED_COUNT} проверено.")
+                        if PROCESSED_COUNT % 10 == 0:
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Статистика: {PROCESSED_COUNT} IP успешно проверено.")
                     return code
-                break
-        except Exception:
-            time.sleep(2)
+                else:
+                    # Ошибка API (например, зарезервированный IP)
+                    break
+            else:
+                time.sleep(2)
+        except Exception as e:
+            time.sleep(3)
             
     with CACHE_LOCK:
         UNRESOLVED_COUNT += 1
@@ -136,7 +144,7 @@ def check_ip_location(host):
     return None
 
 def validate_config(config):
-    """Проверяет, является ли строка минимально валидным прокси-конфигом."""
+    """Проверяет минимальную валидность строки прокси."""
     if not any(config.startswith(p) for p in PROTOCOLS): 
         return False
     if len(config) < 15: 
@@ -145,9 +153,9 @@ def validate_config(config):
     return bool(host and port)
 
 def sanitize_sources(file_path):
-    """Очищает файл источников от дубликатов, пробелов и мусора."""
+    """Очищает файл источников от дубликатов и пустых строк."""
     if not os.path.exists(file_path): 
-        print(f"(!) Файл {file_path} не найден.")
+        print(f"(!) Источник {file_path} не найден. Создание пустого файла.")
         with open(file_path, 'w', encoding='utf-8') as f: pass
         return []
         
@@ -163,11 +171,11 @@ def sanitize_sources(file_path):
             
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(clean))
-    print(f"Загружено источников: {len(clean)}")
+    print(f"Загружено уникальных источников: {len(clean)}")
     return clean
 
 def save_results(structured_data, mix_data):
-    """Записывает отфильтрованные данные в файлы и обновляет mix.txt."""
+    """Записывает результаты в файлы по странам и общий mix.txt."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     # Сохранение по отдельным странам
@@ -175,7 +183,9 @@ def save_results(structured_data, mix_data):
         file_name = f"{country}.txt"
         with open(file_name, 'w', encoding='utf-8') as f:
             if configs:
-                f.write("\n".join(sorted(list(set(configs)))))
+                # Финальная очистка дубликатов внутри списка страны
+                unique_configs = sorted(list(set(configs)))
+                f.write("\n".join(unique_configs))
             f.write(f"\n\n# Total: {len(configs)}\n# Updated: {now_str}")
 
     # Сохранение общего микса
@@ -185,36 +195,42 @@ def save_results(structured_data, mix_data):
             f.write("\n".join(unique_mix))
         f.write(f"\n\n# Total: {len(mix_data)}\n# Updated: {now_str}")
     
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Все файлы (.txt) обновлены.")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Обновление файлов завершено.")
 
 def git_commit_and_push():
-    """Автоматизирует процесс отправки изменений в GitHub Actions."""
+    """Синхронизация локальных изменений с GitHub репозиторием."""
     try:
-        # Настройка Git
-        subprocess.run(["git", "config", "--global", "user.name", "Proxy-Parser-Bot"], check=True)
-        subprocess.run(["git", "config", "--global", "user.email", "bot@proxy.local"], check=True)
+        # Инициализация параметров Git
+        subprocess.run(["git", "config", "--global", user.name, "VPN-Monster-Bot"], check=True)
+        subprocess.run(["git", "config", "--global", user.email, "bot@vpn-monster.com"], check=True)
+        
+        # Добавляем все текстовые файлы
         subprocess.run(["git", "add", "*.txt"], check=True)
         
+        # Проверяем наличие изменений (diff)
         status = subprocess.run(["git", "diff", "--cached", "--quiet"])
         if status.returncode == 0:
-            print("Нет изменений для отправки.")
+            print("Изменений для фиксации не обнаружено.")
             return
 
-        commit_msg = f"Auto-Update: {datetime.now().strftime('%Y-%m-%d %H:%M')} | Nodes: {len(IP_CACHE)}"
+        commit_msg = f"Auto-Update: {datetime.now().strftime('%Y-%m-%d %H:%M')} | Verified: {len(IP_CACHE)}"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+        
+        # Pull для предотвращения конфликтов
         subprocess.run(["git", "pull", "--rebase"], check=True)
         
+        # Push в репозиторий
         res = subprocess.run(["git", "push"], capture_output=True, text=True)
         if res.returncode != 0:
-            print(f"Ошибка Push: {res.stderr}")
+            print(f"Ошибка при выполнении Git Push: {res.stderr}")
         else:
-            print(">>> Данные синхронизированы с GitHub.")
+            print(">>> Репозиторий GitHub успешно обновлен.")
             
     except Exception as e:
-        print(f"Ошибка Git: {e}")
+        print(f"Ошибка Git-интеграции: {e}")
 
 def process():
-    """Главная функция парсера."""
+    """Основная логика парсера и классификатора."""
     start_time = datetime.now()
     print(f"--- ЗАПУСК ПАРСЕРА: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ---")
     
@@ -223,38 +239,42 @@ def process():
     if not sources:
         return
 
-    # Используем множество для автоматической дедупликации на лету
+    # Группировка по протоколам для обеспечения разнообразия выборки
+    proto_groups = defaultdict(list)
     seen_nodes = set()
-    unique_configs = []
     
-    print("Сбор и фильтрация данных...")
+    print("Этап 1: Сбор сырых данных из источников...")
     for url in sources:
         if SHOULD_EXIT: break
         
         if url.startswith("http"):
             try:
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                # Ограничиваем размер скачиваемого контента 15MB
-                with requests.get(url, timeout=25, headers=headers, stream=True) as r:
+                # Используем стандартные заголовки браузера
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                # Стримим контент, чтобы не перегружать память
+                with requests.get(url, timeout=30, headers=headers, stream=True) as r:
                     r.raise_for_status()
                     chunks = []
-                    downloaded = 0
+                    downloaded_size = 0
                     for chunk in r.iter_content(chunk_size=1024*1024, decode_unicode=True):
                         if chunk:
                             chunks.append(chunk)
-                            downloaded += len(chunk)
-                        if downloaded > 15 * 1024 * 1024: 
+                            downloaded_size += len(chunk)
+                        # Защита от слишком тяжелых файлов (лимит 10МБ)
+                        if downloaded_size > 10 * 1024 * 1024:
+                            print(f"  ! Источник {url[:40]}... слишком большой, обрезано.")
                             break
                     
                     content = "".join(chunks)
-                    del chunks # Освобождаем память
+                    del chunks 
                     
+                    # Если в тексте нет прямых ссылок, пробуем декодировать весь текст как Base64 (формат подписки)
                     if not any(p in content for p in PROTOCOLS):
                         decoded = decode_base64(content)
                         if decoded: content = decoded
                     
-                    # Ищем совпадения и сразу фильтруем дубликаты
                     found_in_source = 0
+                    # Регулярное выражение для поиска всех типов ссылок
                     for m in re.finditer(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', content):
                         cfg = m.group(0)
                         host, port = get_server_info(cfg)
@@ -262,40 +282,63 @@ def process():
                             node_id = f"{host}:{port}"
                             if node_id not in seen_nodes:
                                 seen_nodes.add(node_id)
-                                unique_configs.append(cfg)
-                                found_in_source += 1
+                                # Распределяем по группам протоколов
+                                for p in PROTOCOLS:
+                                    if cfg.startswith(p):
+                                        proto_groups[p].append(cfg)
+                                        found_in_source += 1
+                                        break
                     
-                    print(f"  + {url[:50]}... : +{found_in_source} новых")
+                    print(f"  + {url[:50]}... : Найдено {found_in_source} новых узлов.")
                     del content
-                    gc.collect() # Очистка мусора после каждого источника
-            except Exception:
+                    gc.collect() # Принудительный сбор мусора для стабильности в GitHub Actions
+            except Exception as e:
+                print(f"  - Ошибка в источнике {url[:40]}: {type(e).__name__}")
                 continue
         else:
-            # Если в списке была прямая ссылка
+            # Обработка прямых ссылок, если они есть в списке источников
             host, port = get_server_info(url)
             if host and port:
                 node_id = f"{host}:{port}"
                 if node_id not in seen_nodes:
                     seen_nodes.add(node_id)
-                    unique_configs.append(url)
+                    for p in PROTOCOLS:
+                        if url.startswith(p):
+                            proto_groups[p].append(url)
+                            break
 
-    total_unique = len(unique_configs)
-    print(f"Всего уникальных узлов: {total_unique}")
+    total_unique = len(seen_nodes)
+    print(f"\nСтатистика найденных уникальных узлов:")
+    for p, items in proto_groups.items():
+        print(f"  - {p}: {len(items)}")
     
     if total_unique == 0:
+        print("Валидные узлы не найдены.")
         return
 
-    # Перемешиваем для разнообразия выборки
-    random.shuffle(unique_configs)
-
-    # Оптимальный лимит для работы в рамках 5-10 минут Actions
-    limit = 350
-    process_list = unique_configs[:limit]
+    # Этап 2: Формирование очереди на проверку GeoIP
+    # Используем алгоритм Round Robin, чтобы взять поровну из каждого типа протокола
+    process_list = []
+    limit_per_session = 350 # Безопасный лимит для ip-api.com
     
+    # Перемешиваем узлы внутри каждой группы
+    for p in proto_groups:
+        random.shuffle(proto_groups[p])
+    
+    # Вытягиваем по одному из каждой группы, пока не достигнем лимита
+    while len(process_list) < limit_per_session and any(proto_groups.values()):
+        for p in list(proto_groups.keys()):
+            if proto_groups[p]:
+                process_list.append(proto_groups[p].pop(0))
+            else:
+                del proto_groups[p]
+            if len(process_list) >= limit_per_session:
+                break
+
     structured_data = {c: [] for c in COUNTRIES}
     mix_data = []
     
-    print(f"Геолокация (Лимит сессии: {limit})...")
+    print(f"\nЭтап 2: Проверка геолокации (Выбрано для проверки: {len(process_list)} из {total_unique})...")
     
     for cfg in process_list:
         if SHOULD_EXIT: break
@@ -304,23 +347,31 @@ def process():
         country_code = check_ip_location(host)
         
         if country_code:
+            # Сопоставляем код страны с нашими целевыми странами
+            matched = False
             for country_key, info in COUNTRIES.items():
                 if country_code == info["code"] or country_code == info.get("alt_code"):
                     structured_data[country_key].append(cfg)
+                    matched = True
                     break
+        
+        # Все проверенные (или даже не определенные по стране) узлы идут в микс
         mix_data.append(cfg)
 
-    # Сохранение и пуш
+    # Этап 3: Сохранение и синхронизация
     save_results(structured_data, mix_data)
     git_commit_and_push()
     
     end_time = datetime.now()
-    print(f"\n--- ГОТОВО: {end_time.strftime('%H:%M:%S')} (Затрачено: {end_time - start_time}) ---")
+    duration = end_time - start_time
+    print(f"\n--- РАБОТА ЗАВЕРШЕНА: {end_time.strftime('%H:%M:%S')} ---")
+    print(f"Общее время: {duration} | Ошибок GeoIP: {UNRESOLVED_COUNT}")
 
 if __name__ == "__main__":
     try:
         process()
     except Exception as e:
         print(f"\n[КРИТИЧЕСКИЙ СБОЙ]: {e}")
+        # Пытаемся сохранить хотя бы то, что успели обработать
         git_commit_and_push()
         sys.exit(1)
