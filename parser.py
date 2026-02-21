@@ -34,7 +34,7 @@ COUNTRIES = {
     "france": {"flag": "🇫🇷", "code": "FR", "name": "France"}
 }
 
-# Строгий отбор протоколов для обхода блокировок в России (DPI)
+# Строгий отбор протоколов для обхода блокировок (DPI)
 ALLOWED_PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
 # Глобальное состояние
@@ -43,35 +43,34 @@ CACHE_LOCK = threading.Lock()
 PROCESSED_COUNT = 0
 SHOULD_EXIT = False 
 
-# Настройки производительности и лимитов
-MAX_AGE_HOURS = 48          # Время жизни конфига (удаление старья через 48 часов)
-BLACKLIST_BAIL_HOURS = 12   # Время бана за мертвый порт
-MAX_BLACKLIST_SIZE = 50000  # Максимальное количество забаненных IP
-GEOIP_LIMIT_PER_RUN = 3000  # Лимит новых GeoIP проверок за цикл
-THREAD_COUNT = 60           # Количество потоков для проверки портов
-GEOIP_PARALLEL_LEVEL = 5    # Сколько API опрашивать ОДНОВРЕМЕННО для одного IP (стая из 5 API)
-PORT_TIMEOUT = 3.5          # Увеличенный таймаут, чтобы медленные сервера не отсеивались
+# Экстремальные настройки производительности и защиты
+BLACKLIST_BAIL_HOURS = 12   # Время бана за мертвый порт (в часах)
+MAX_BLACKLIST_SIZE = 50000  # Максимальный размер черного списка
+GEOIP_LIMIT_PER_RUN = 3000  # Лимит проверок API
+THREAD_COUNT = 60           # Оптимально для GitHub Actions (стабильность сети)
+GEOIP_PARALLEL_LEVEL = 5    # Опрос 5 API одновременно
+PORT_TIMEOUT = 3.5          # Таймаут для медленных серверов (Reality/Hysteria)
 
 def signal_handler(sig, frame):
     """Корректный выход при прерывании."""
     global SHOULD_EXIT
-    print("\n[!] Остановка процесса пользователем. Завершаем текущие задачи...", flush=True)
+    print("\n[!] Остановка процесса. Завершаем текущие задачи...", flush=True)
     SHOULD_EXIT = True
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 def get_random_ua():
-    """Случайный User-Agent для мимикрии под браузер."""
+    """Рандомный User-Agent для мимикрии под браузер."""
     uas = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
     ]
     return random.choice(uas)
 
 def decode_base64(data):
-    """Безопасное декодирование Base64 с фиксом паддинга."""
+    """Безопасное декодирование Base64 с исправлением паддинга."""
     try:
         data = re.sub(r'[^a-zA-Z0-9+/=]', '', data)
         if not data: return ""
@@ -87,7 +86,7 @@ def encode_base64(data):
     except Exception: return ""
 
 def get_server_info(config):
-    """Извлечение IP/Хоста и Порта из ссылки (не затрагивая параметры обхода)."""
+    """Извлечение IP и Порта БЕЗ ПОВРЕЖДЕНИЯ параметров обхода блокировок."""
     try:
         clean_config = config.split('#')[0]
         if clean_config.startswith("vmess://"):
@@ -102,9 +101,8 @@ def get_server_info(config):
     return None, None
 
 def is_node_alive(host, port, timeout=PORT_TIMEOUT):
-    """Мгновенная проверка доступности TCP порта с нормальным таймаутом."""
+    """Быстрая проверка доступности TCP порта."""
     if not host or not port: return False
-    # Игнорируем локальные адреса
     if host.startswith(('127.', '192.168.', '10.', '172.16.')) or host == 'localhost':
         return False
     try:
@@ -118,7 +116,8 @@ def is_node_alive(host, port, timeout=PORT_TIMEOUT):
 def beautify_config(config, country_key=None, fallback_code="UN"):
     """
     Создает идеальное оформление: ❤️ 🏁 Страна | Код 🏁 ❤️
-    Гарантированно сохраняет параметры для VLESS Reality, Trojan, SS, Hysteria.
+    Если страны нет в списке: ❤️ 🌍 Global | Код 🌍 ❤️
+    Оставляет параметры шифрования (sni, fp, pbk) нетронутыми!
     """
     try:
         if country_key and country_key in COUNTRIES:
@@ -136,13 +135,51 @@ def beautify_config(config, country_key=None, fallback_code="UN"):
                 data['ps'] = label
                 return "vmess://" + encode_base64(json.dumps(data))
         else:
-            # Обрезаем старое имя и клеим новое. Все параметры (sni, pbk, fp) остаются нетронутыми!
             base_part = config.split('#')[0]
             return f"{base_part}#{quote(label)}"
-            
     except Exception: return config
 
-# --- ТУРБО-ДВИЖОК GEOIP (10 ИСТОЧНИКОВ API) ---
+# --- ИНТЕЛЛЕКТУАЛЬНАЯ ПАМЯТЬ ПОДПИСОК (КЭШИРОВАНИЕ IP) ---
+
+def pre_populate_ip_cache():
+    """
+    Сканирует твои готовые подписки (.txt файлы). 
+    Если находит IP, запоминает его страну. 
+    Благодаря этому бот НЕ тратит время на GeoIP API для старых узлов!
+    """
+    print("🧠 Загрузка базы знаний (IP Cache) из существующих подписок...", flush=True)
+    files = [f"{c}.txt" for c in COUNTRIES] + ["mix.txt"]
+    loaded_count = 0
+    
+    for f_name in files:
+        if os.path.exists(f_name):
+            country_code = None
+            for c_key, c_info in COUNTRIES.items():
+                if f"{c_key}.txt" == f_name:
+                    country_code = c_info["code"]
+                    break
+                    
+            try:
+                with open(f_name, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        cfg = line.strip()
+                        if cfg and not cfg.startswith('#'):
+                            host, _ = get_server_info(cfg)
+                            if host:
+                                with CACHE_LOCK:
+                                    if country_code and host not in IP_CACHE:
+                                        IP_CACHE[host] = country_code
+                                        loaded_count += 1
+                                    elif f_name == "mix.txt" and host not in IP_CACHE:
+                                        match = re.search(r'\|\s*([A-Z]{2})\s*', unquote(cfg))
+                                        if match:
+                                            IP_CACHE[host] = match.group(1)
+                                            loaded_count += 1
+            except Exception: pass
+            
+    print(f"✅ В память загружено {loaded_count} известных IP. Они мгновенно пропустят проверку API.")
+
+# --- ТУРБО-ДВИЖОК GEOIP (10 ИСТОЧНИКОВ API С АНТИ-БАНОМ) ---
 
 def api_01(h):
     try: return requests.get(f"http://ip-api.com/json/{h}?fields=status,countryCode", timeout=3).json().get("countryCode")
@@ -176,20 +213,20 @@ def api_10(h):
     except: return None
 
 def check_ip_location_smart(host):
-    """Умное ПАРАЛЛЕЛЬНОЕ определение страны. Жесткая загрузка (5 API одновременно)."""
+    """ПАРАЛЛЕЛЬНОЕ определение страны. Если IP есть в памяти, API не вызывается!"""
     global PROCESSED_COUNT
     if SHOULD_EXIT: return None
-    
-    with CACHE_LOCK:
-        if host in IP_CACHE: return IP_CACHE[host]
 
-    # Микро-задержка для GitHub Actions, чтобы не словить бан от API (429 Too Many Requests)
+    with CACHE_LOCK:
+        if host in IP_CACHE: 
+            return IP_CACHE[host]
+
+    # Защита от спам-бана со стороны API
     time.sleep(random.uniform(0.1, 0.4))
 
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
 
-    # Запуск 5 потоков на 1 IP
     with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as api_executor:
         future_to_api = {api_executor.submit(p, host): p for p in providers[:GEOIP_PARALLEL_LEVEL]}
         for future in as_completed(future_to_api):
@@ -203,8 +240,7 @@ def check_ip_location_smart(host):
                         PROCESSED_COUNT += 1
                     return code
             except: continue
-
-    # Фолбэк на остальные API, если первые 5 не ответили
+            
     for provider in providers[GEOIP_PARALLEL_LEVEL:]:
         if SHOULD_EXIT: break
         try:
@@ -220,10 +256,9 @@ def check_ip_location_smart(host):
     with CACHE_LOCK: IP_CACHE[host] = "UN"
     return "UN"
 
-# --- СИСТЕМА СОХРАНЕНИЯ, ЧИСТКИ И АВТО-УДАЛЕНИЯ ---
+# --- СИСТЕМА ЧЕРНОГО СПИСКА ---
 
 def load_blacklist():
-    """Загрузка черного списка."""
     bl = {}
     if os.path.exists('blacklist.txt'):
         try:
@@ -236,7 +271,6 @@ def load_blacklist():
     return bl
 
 def save_blacklist(bl):
-    """Сохранение черного списка."""
     now = datetime.now()
     active = {n: ts for n, ts in bl.items() if now - ts < timedelta(hours=BLACKLIST_BAIL_HOURS)}
     sorted_bl = sorted(active.items(), key=lambda x: x[1], reverse=True)[:MAX_BLACKLIST_SIZE]
@@ -245,114 +279,66 @@ def save_blacklist(bl):
             for node, ts in sorted_bl: f.write(f"{node}|{ts.isoformat()}\n")
     except: pass
 
-def load_current_database():
-    """Загрузка всей ТЕКУЩЕЙ базы узлов для авто-удаления старья и защиты от дублей."""
-    db, nodes = {}, set()
-    files = [f"{c}.txt" for c in COUNTRIES] + ["mix.txt"]
-    now = datetime.now()
-    for f_name in files:
-        if os.path.exists(f_name):
-            try:
-                with open(f_name, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                dm = re.search(r'# Updated: ([\d\-\s:]+)', content)
-                f_dt = datetime.strptime(dm.group(1), "%Y-%m-%d %H:%M:%S") if dm else now
-                for line in content.splitlines():
-                    cfg = line.strip()
-                    if cfg and not cfg.startswith('#'):
-                        db[cfg] = f_dt
-                        h, p = get_server_info(cfg)
-                        if h and p: nodes.add(f"{h}:{p}")
-            except: pass
-    return db, nodes
+# --- СИСТЕМА СОХРАНЕНИЯ (СТРОГОЕ АВТО-УДАЛЕНИЕ / ЗЕРКАЛИРОВАНИЕ) ---
 
 def save_and_organize(structured, final_mix_list, failed_list):
     """
-    Главная функция синхронизации файлов. 
-    Слияние новых узлов со старыми и ЖЕСТКОЕ авто-удаление (сдохших и просроченных).
+    Режим Strict Sync: Файлы ПЕРЕЗАПИСЫВАЮТСЯ только живыми конфигурациями из all_sources.txt.
+    Если источник пуст — файлы станут абсолютно пустыми. Полное удаление старья.
     """
-    now = datetime.now()
-    threshold = now - timedelta(hours=MAX_AGE_HOURS)
-    all_configs_to_mix = []
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # 1. Сохранение по странам
     for country, configs in structured.items():
         file_name = f"{country}.txt"
-        current_data = {}
-        
-        # Загружаем старое
-        if os.path.exists(file_name):
-            try:
-                with open(file_name, 'r', encoding='utf-8') as f:
-                    for line in f:
-                        c = line.strip()
-                        if c and not c.startswith('#'): current_data[c] = now
-            except: pass
-        
-        # Добавляем новое 
-        for nc in configs:
-            current_data[nc] = now
-            
-        # АВТО-УДАЛЕНИЕ (оставляем только то, что не старее MAX_AGE_HOURS)
-        valid = [c for c, ts in current_data.items() if ts > threshold]
+        valid = sorted(list(set(configs)))
         
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
-                if valid: f.write("\n".join(sorted(list(set(valid)))))
-                f.write(f"\n\n# Total Active: {len(valid)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+                if valid:
+                    f.write("\n".join(valid))
+                    f.write(f"\n\n# Total Active: {len(valid)}\n# Synced: {now_str}")
+                else:
+                    f.write(f"# No active nodes found\n# Synced: {now_str}")
         except: pass
 
-    # 2. Обработка общего MIX (Объединяет все страны + Global)
-    mix_data = {}
-    if os.path.exists("mix.txt"):
-        try:
-            with open("mix.txt", 'r', encoding='utf-8') as f:
-                for line in f:
-                    c = line.strip()
-                    if c and not c.startswith('#'): mix_data[c] = now
-        except: pass
-        
-    for nc in final_mix_list:
-        mix_data[nc] = now
-        
-    valid_mix = [c for c, ts in mix_data.items() if ts > threshold]
-    valid_mix = sorted(list(set(valid_mix)))
-
+    valid_mix = sorted(list(set(final_mix_list)))
     try:
         with open("mix.txt", 'w', encoding='utf-8') as f:
-            if valid_mix: f.write("\n".join(valid_mix))
-            f.write(f"\n\n# Total Active: {len(valid_mix)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+            if valid_mix:
+                f.write("\n".join(valid_mix))
+                f.write(f"\n\n# Total Active: {len(valid_mix)}\n# Synced: {now_str}")
+            else:
+                f.write(f"# No active nodes found\n# Synced: {now_str}")
         
-        # Основная Base64 подписка
         with open("sub_monster.txt", 'w', encoding='utf-8') as f:
             f.write(encode_base64("\n".join(valid_mix)))
             
-        # Запись ошибок (Failed Nodes) - Восстановлено из твоих версий!
+        valid_failed = sorted(list(set(failed_list)))
         with open("failed_nodes.txt", 'w', encoding='utf-8') as f:
-            if failed_list: f.write("\n".join(list(set(failed_list))))
-            f.write(f"\n\n# Failed Nodes Count: {len(failed_list)}\n# Log: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-            
-        # Подписка на ошибки в Base64
+            if valid_failed:
+                f.write("\n".join(valid_failed))
+                f.write(f"\n\n# Failed Nodes Count: {len(valid_failed)}\n# Log: {now_str}")
+            else:
+                f.write(f"# No failed nodes\n# Log: {now_str}")
+                
         with open("sub_failed.txt", 'w', encoding='utf-8') as f:
-            f.write(encode_base64("\n".join(list(set(failed_list)))))
+            f.write(encode_base64("\n".join(valid_failed)))
     except: pass
 
 def git_commit_push():
     """Встроенная отправка в GitHub."""
-    print("\n[Git] Отправка обновлений в репозиторий...", flush=True)
+    print("\n[Git] Синхронизация репозитория...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
-        
-        # Загрузка изменений с сервера, чтобы избежать конфликтов при пуше
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
-        
         subprocess.run(["git", "add", "*.txt"], check=True)
+        
         if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
             print("[Git] Нет изменений для коммита.")
             return
             
-        msg = f"Ultra-Update {datetime.now().strftime('%d/%m %H:%M')} | Auto-Sync Mode"
+        msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M')} | Strict Mirror Mode"
         subprocess.run(["git", "commit", "-m", msg], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)
         print("[Git] Успешно отправлено!")
@@ -361,14 +347,13 @@ def git_commit_push():
 
 # --- ФУНКЦИИ ВОРКЕРЫ ---
 
-def check_worker(config, blacklist, db_now, known_nodes, lock, seen):
-    """Проверка одного узла с защитой от повторных прогонов."""
+def check_worker(config, blacklist, lock, seen):
+    """Проверка узла на доступность с защитой от дублирования внутри прогона."""
     h, p = get_server_info(config)
     if not h or not p: return None
     nid = f"{h}:{p}"
     
-    # Жесткий фильтр: пропускаем, если уже есть в БД, забанен или проверен в этом цикле
-    if config in db_now or nid in known_nodes or nid in blacklist: return None
+    if nid in blacklist: return None
     
     with lock:
         if nid in seen: return None
@@ -379,112 +364,103 @@ def check_worker(config, blacklist, db_now, known_nodes, lock, seen):
     else:
         return ("FAIL", nid, config)
 
-# --- ГЛАВНЫЙ ДВИЖОК ---
+# --- ГЛАВНЫЙ ДВИЖОК GITHUB ACTIONS ---
 
 def process_monster_engine():
-    """Главный двигатель парсера."""
     start_time = datetime.now()
-    print(f"\n{'='*50}\n🚀 MONSTER ENGINE ULTIMATE СТАРТ: {start_time.strftime('%H:%M:%S')}\n{'='*50}", flush=True)
+    print(f"\n{'='*50}\n🚀 MONSTER ENGINE SYNC СТАРТ: {start_time.strftime('%H:%M:%S')}\n{'='*50}", flush=True)
     
-    if not os.path.exists('all_sources.txt'):
-        print("[!] Файл all_sources.txt не найден! Создайте файл со списком ссылок.")
-        return
-
-    with open('all_sources.txt', 'r', encoding='utf-8') as f:
-        sources = list(set([l.strip() for l in f if l.strip()]))
+    # 1. Загружаем память подписок (пропуск API)
+    pre_populate_ip_cache()
+    
+    sources = []
+    if os.path.exists('all_sources.txt'):
+        with open('all_sources.txt', 'r', encoding='utf-8') as f:
+            sources = list(set([l.strip() for l in f if l.strip()]))
+    else:
+        print("[!] Файл all_sources.txt пуст или не найден. Начинается полная очистка баз.")
 
     blacklist = load_blacklist()
-    db_now, known_nodes = load_current_database()
     raw_configs = []
     
-    # 1. Жесткий парсинг источников (Сбор данных)
-    print(f"📡 Сбор данных из {len(sources)} источников (Только нужные протоколы)...", flush=True)
+    print(f"📡 Сбор данных из {len(sources)} источников (Только разрешенные протоколы)...", flush=True)
     for url in sources:
-        if SHOULD_EXIT: break
         try:
-            # Игнорируем собственные файлы, чтобы не парсить свои же ошибки
             if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
                 continue
             r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
             text = r.text
             
-            # Декодирование, если источник в Base64
             if not any(p in text for p in ALLOWED_PROTOCOLS):
                 decoded = decode_base64(text)
                 if decoded: text = decoded
             
-            # Извлекаем ссылки целиком, чтобы не потерять параметры обхода блокировок
             regex_pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
             found = re.findall(regex_pattern, text)
             raw_configs.extend(found)
-            gc.collect()
-        except:
-            print(f"  [-] Пропуск недоступного источника: {url[:50]}...")
+        except Exception: pass
 
-    # Чистим от текстовых дублей
     raw_configs = list(set(raw_configs))
-    print(f"🔍 Найдено уникальных сырых ссылок: {len(raw_configs)}")
+    print(f"🔍 Найдено уникальных сырых ссылок для проверки: {len(raw_configs)}")
 
-    # 2. Массовая проверка портов (Multi-threading)
     valid_new = []
     failed_new = []
     global_seen = set()
     seen_lock = threading.Lock()
     
-    print(f"⚡ Проверка доступности портов в {THREAD_COUNT} потоков (Таймаут {PORT_TIMEOUT}с)...", flush=True)
-    with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-        futures = [executor.submit(check_worker, c, blacklist, db_now, known_nodes, seen_lock, global_seen) for c in raw_configs]
-        for future in as_completed(futures):
-            if SHOULD_EXIT: break
-            try:
-                res = future.result()
-                if res:
-                    if isinstance(res, tuple): # FAIL
-                        blacklist[res[1]] = datetime.now()
-                        failed_new.append(res[2])
-                    else:
-                        valid_new.append(res)
-            except: continue
+    if raw_configs:
+        print(f"⚡ Проверка портов (Таймаут {PORT_TIMEOUT}с) в {THREAD_COUNT} потоков...", flush=True)
+        with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
+            futures = [executor.submit(check_worker, c, blacklist, seen_lock, global_seen) for c in raw_configs]
+            for future in as_completed(futures):
+                if SHOULD_EXIT: break
+                try:
+                    res = future.result()
+                    if res:
+                        if isinstance(res, tuple): 
+                            blacklist[res[1]] = datetime.now()
+                            failed_new.append(res[2])
+                        else:
+                            valid_new.append(res)
+                except: continue
 
-    print(f"✅ Найдено ЖИВЫХ новых узлов: {len(valid_new)}")
+    print(f"✅ Итого ЖИВЫХ узлов: {len(valid_new)}")
 
-    # 3. Строгое GeoIP Распределение
-    random.shuffle(valid_new)
-    queue = valid_new[:GEOIP_LIMIT_PER_RUN]
     structured_data = {c: [] for c in COUNTRIES}
     final_mix_list = []
     
-    print(f"🌍 Турбо-GeoIP (x{GEOIP_PARALLEL_LEVEL}) для {len(queue)} живых узлов...", flush=True)
-    for cfg in queue:
-        if SHOULD_EXIT: break
-        host, _ = get_server_info(cfg)
-        code = check_ip_location_smart(host)
+    if valid_new:
+        print(f"🌍 Турбо-GeoIP определение (С обходом API для известных узлов)...", flush=True)
+        random.shuffle(valid_new)
+        queue = valid_new[:GEOIP_LIMIT_PER_RUN]
         
-        matched = False
-        if code and code != "UN":
-            for c_name, c_info in COUNTRIES.items():
-                if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
-                    beauty_cfg = beautify_config(cfg, c_name)
-                    structured_data[c_name].append(beauty_cfg)
-                    final_mix_list.append(beauty_cfg)
-                    matched = True
-                    break
-                    
-        # ИСПРАВЛЕНИЕ ОШИБКИ: Сохраняем ЛЮБЫЕ рабочие конфиги, даже если страны нет в словаре
-        if not matched:
-            beauty_cfg = beautify_config(cfg, None, fallback_code=code)
-            final_mix_list.append(beauty_cfg)
+        for cfg in queue:
+            if SHOULD_EXIT: break
+            host, _ = get_server_info(cfg)
+            code = check_ip_location_smart(host)
             
-    # 4. Авто-Удаление старья, Сохранение и Синхронизация
-    print("💾 Слияние со старой базой и АВТО-УДАЛЕНИЕ мертвых узлов...", flush=True)
+            matched = False
+            if code and code != "UN":
+                for c_name, c_info in COUNTRIES.items():
+                    if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
+                        beauty_cfg = beautify_config(cfg, c_name)
+                        structured_data[c_name].append(beauty_cfg)
+                        final_mix_list.append(beauty_cfg)
+                        matched = True
+                        break
+                        
+            if not matched:
+                beauty_cfg = beautify_config(cfg, None, fallback_code=code)
+                final_mix_list.append(beauty_cfg)
+            
+    print("💾 Прямая синхронизация файлов (Режим Зеркала)...", flush=True)
     save_and_organize(structured_data, final_mix_list, failed_new)
     save_blacklist(blacklist)
     
-    # 5. Git Commit & Push
     git_commit_push()
     
     end_time = datetime.now()
-    print(f"\n✅ ЦИКЛ ЗАВЕРШЕН ЗА {end_time - start_time}", flush=True)
+    print(f"\n🏁 ЦИКЛ ЗАВЕРШЕН ЗА {end_time - start_time}.", flush=True)
 
 if __name__ == "__main__":
     try:
