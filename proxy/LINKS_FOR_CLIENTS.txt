@@ -1,0 +1,36 @@
+🚀 MONSTER ENGINE SUBSCRIPTIONS
+----------------------------------------
+Generated: 2026-02-21 20:33:53
+
+📍 BELARUS:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/belarus.txt
+
+📍 FINLAND:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/finland.txt
+
+📍 FRANCE:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/france.txt
+
+📍 GERMANY:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/germany.txt
+
+📍 KAZAKHSTAN:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/kazakhstan.txt
+
+📍 LATVIA:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/latvia.txt
+
+📍 MIX:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/mix.txt
+
+📍 RUSSIA:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/russia.txt
+
+📍 SWEDEN:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/sweden.txt
+
+📍 SWITZERLAND:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/switzerland.txt
+
+📍 USA:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/usa.txt
