@@ -44,11 +44,11 @@ PROCESSED_COUNT = 0
 SHOULD_EXIT = False 
 
 # Экстремальные настройки производительности и защиты
-BLACKLIST_BAIL_HOURS = 12   # Время бана за мертвый порт (в часах)
+BLACKLIST_BAIL_HOURS = 6    # Время бана за мертвый порт (6 часов для синхронности)
 MAX_BLACKLIST_SIZE = 50000  # Максимальный размер черного списка
 GEOIP_LIMIT_PER_RUN = 3000  # Лимит проверок API
 THREAD_COUNT = 60           # Оптимально для GitHub Actions (стабильность сети)
-GEOIP_PARALLEL_LEVEL = 10   # Увеличено для ускорения (количество одновременных запросов к API)
+GEOIP_PARALLEL_LEVEL = 10   # Параллельный опрос API
 PORT_TIMEOUT = 3.5          # Таймаут для медленных серверов (Reality/Hysteria)
 
 def signal_handler(sig, frame):
@@ -213,18 +213,21 @@ def api_10(h):
     except: return None
 
 def check_ip_location_smart(host):
-    """Определение страны для одного хоста с использованием кэша и API."""
+    """ПАРАЛЛЕЛЬНОЕ определение страны. Если IP есть в памяти, API не вызывается!"""
+    global PROCESSED_COUNT
     if SHOULD_EXIT: return None
 
     with CACHE_LOCK:
         if host in IP_CACHE: 
             return IP_CACHE[host]
 
-    # Список провайдеров
+    # Защита от спам-бана со стороны API
+    time.sleep(random.uniform(0.1, 0.4))
+
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
 
-    # Пытаемся получить ответ от любого API
+    # Попытка опроса API
     for provider in providers:
         if SHOULD_EXIT: break
         try:
@@ -262,16 +265,20 @@ def save_blacklist(bl):
             for node, ts in sorted_bl: f.write(f"{node}|{ts.isoformat()}\n")
     except: pass
 
-# --- СИСТЕМА СОХРАНЕНИЯ (СТРОГОЕ АВТО-УДАЛЕНИЕ / ЗЕРКАЛИРОВАНИЕ) ---
+# --- СИСТЕМА СОХРАНЕНИЯ (СТРОГОЕ ЗЕРКАЛИРОВАНИЕ) ---
 
 def save_and_organize(structured, final_mix_list, failed_list):
     """
-    Режим Strict Sync: Файлы ПЕРЕЗАПИСЫВАЮТСЯ только живыми конфигурациями.
+    Режим Strict Mirror Sync: 
+    Файлы ПЕРЕЗАПИСЫВАЮТСЯ полностью. Если источника нет или он пуст — файл затирается.
+    Обеспечивает 100% синхронизацию между all_sources.txt и конечными подписками.
     """
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    for country, configs in structured.items():
+    # Синхронизация по странам
+    for country in COUNTRIES:
         file_name = f"{country}.txt"
+        configs = structured.get(country, [])
         valid = sorted(list(set(configs)))
         
         try:
@@ -280,9 +287,11 @@ def save_and_organize(structured, final_mix_list, failed_list):
                     f.write("\n".join(valid))
                     f.write(f"\n\n# Total Active: {len(valid)}\n# Synced: {now_str}")
                 else:
-                    f.write(f"# No active nodes found\n# Synced: {now_str}")
+                    # Если узлов нет — файл становится пустым сервисным сообщением
+                    f.write(f"# No active nodes found for {country}\n# Synced: {now_str}")
         except: pass
 
+    # Синхронизация общего микса
     valid_mix = sorted(list(set(final_mix_list)))
     try:
         with open("mix.txt", 'w', encoding='utf-8') as f:
@@ -292,9 +301,11 @@ def save_and_organize(structured, final_mix_list, failed_list):
             else:
                 f.write(f"# No active nodes found\n# Synced: {now_str}")
         
+        # Base64 подписка
         with open("sub_monster.txt", 'w', encoding='utf-8') as f:
-            f.write(encode_base64("\n".join(valid_mix)))
+            f.write(encode_base64("\n".join(valid_mix)) if valid_mix else "")
             
+        # Список неудачных узлов (failed)
         valid_failed = sorted(list(set(failed_list)))
         with open("failed_nodes.txt", 'w', encoding='utf-8') as f:
             if valid_failed:
@@ -304,39 +315,39 @@ def save_and_organize(structured, final_mix_list, failed_list):
                 f.write(f"# No failed nodes\n# Log: {now_str}")
                 
         with open("sub_failed.txt", 'w', encoding='utf-8') as f:
-            f.write(encode_base64("\n".join(valid_failed)))
+            f.write(encode_base64("\n".join(valid_failed)) if valid_failed else "")
     except: pass
 
 def git_commit_push():
-    """Встроенная отправка в GitHub с защитой от зависаний."""
-    print("\n[Git] Синхронизация репозитория...", flush=True)
+    """Встроенная отправка в GitHub с принудительной синхронизацией."""
+    print("\n[Git] Синхронизация репозитория (Mirror Mode)...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
         
-        # Обновляемся перед пушем
+        # Принудительно забираем актуальное состояние, чтобы не было конфликтов
         subprocess.run(["git", "fetch", "origin"], check=True)
         subprocess.run(["git", "reset", "--hard", "origin/main"], check=True)
         
         subprocess.run(["git", "add", "*.txt"], check=True)
         
         if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-            print("[Git] Нет изменений для коммита.")
+            print("[Git] Файлы уже синхронизированы. Изменений нет.")
             return
             
-        msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M')} | Strict Mirror Mode"
+        msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M')} | Mirror Sync Active"
         subprocess.run(["git", "commit", "-m", msg], check=True)
         
-        # Принудительный пуш для синхронизации зеркала
+        # Force push гарантирует, что репозиторий будет точной копией локальных данных
         subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
-        print("[Git] Успешно отправлено!")
+        print("[Git] Зеркало успешно обновлено!")
     except Exception as e:
         print(f"[Git] Ошибка при пуше: {e}")
 
 # --- ФУНКЦИИ ВОРКЕРЫ ---
 
 def check_worker(config, blacklist, lock, seen):
-    """Проверка узла на доступность."""
+    """Проверка узла на доступность с защитой от дублирования."""
     h, p = get_server_info(config)
     if not h or not p: return None
     nid = f"{h}:{p}"
@@ -352,11 +363,11 @@ def check_worker(config, blacklist, lock, seen):
     else:
         return ("FAIL", nid, config)
 
-def geoip_worker(cfg):
-    """Воркер для параллельного GeoIP."""
+def geoip_parallel_worker(cfg):
+    """Воркер для многопоточного GeoIP."""
     host, _ = get_server_info(cfg)
     code = check_ip_location_smart(host)
-    return cfg, code
+    return (cfg, code)
 
 # --- ГЛАВНЫЙ ДВИЖОК GITHUB ACTIONS ---
 
@@ -364,15 +375,16 @@ def process_monster_engine():
     start_time = datetime.now()
     print(f"\n{'='*50}\n🚀 MONSTER ENGINE SYNC СТАРТ: {start_time.strftime('%H:%M:%S')}\n{'='*50}", flush=True)
     
-    # 1. Загружаем память подписок (пропуск API)
+    # 1. Загружаем память подписок
     pre_populate_ip_cache()
     
     sources = []
     if os.path.exists('all_sources.txt'):
         with open('all_sources.txt', 'r', encoding='utf-8') as f:
             sources = list(set([l.strip() for l in f if l.strip()]))
-    else:
-        print("[!] Файл all_sources.txt пуст или не найден.")
+    
+    if not sources:
+        print("[!] ВНИМАНИЕ: all_sources.txt пуст. Будет выполнена полная очистка всех подписок!")
 
     blacklist = load_blacklist()
     raw_configs = []
@@ -380,11 +392,13 @@ def process_monster_engine():
     print(f"📡 Сбор данных из {len(sources)} источников...", flush=True)
     for url in sources:
         try:
+            # Игнорируем собственные результирующие файлы во избежание рекурсии
             if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
                 continue
             r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
             text = r.text
             
+            # Попытка декодировать, если это подписка в base64
             if not any(p in text for p in ALLOWED_PROTOCOLS):
                 decoded = decode_base64(text)
                 if decoded: text = decoded
@@ -395,7 +409,7 @@ def process_monster_engine():
         except Exception: pass
 
     raw_configs = list(set(raw_configs))
-    print(f"🔍 Найдено уникальных сырых ссылок: {len(raw_configs)}")
+    print(f"🔍 Найдено уникальных ссылок для проверки: {len(raw_configs)}")
 
     valid_new = []
     failed_new = []
@@ -424,13 +438,13 @@ def process_monster_engine():
     final_mix_list = []
     
     if valid_new:
-        print(f"🌍 Турбо-GeoIP определение (Параллельный режим)...", flush=True)
+        print(f"🌍 Турбо-GeoIP определение (Синхронный Mirror режим)...", flush=True)
         random.shuffle(valid_new)
         queue = valid_new[:GEOIP_LIMIT_PER_RUN]
         
-        # Запускаем GeoIP в несколько потоков
+        # Параллельное определение стран для ускорения
         with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as geo_executor:
-            geo_futures = [geo_executor.submit(geoip_worker, cfg) for cfg in queue]
+            geo_futures = [geo_executor.submit(geoip_parallel_worker, cfg) for cfg in queue]
             
             for i, future in enumerate(as_completed(geo_futures)):
                 if SHOULD_EXIT: break
@@ -446,18 +460,16 @@ def process_monster_engine():
                                 final_mix_list.append(beauty_cfg)
                                 matched = True
                                 break
-                    
+                                
                     if not matched:
                         beauty_cfg = beautify_config(cfg, None, fallback_code=code)
                         final_mix_list.append(beauty_cfg)
-                    
-                    # Логирование прогресса каждые 50 узлов
-                    if i % 50 == 0:
-                        print(f"   > Обработано {i}/{len(queue)} узлов...", flush=True)
                         
-                except Exception: continue
+                    if i % 100 == 0:
+                        print(f"   > Обработано {i}/{len(queue)}...", flush=True)
+                except: continue
             
-    print("💾 Сохранение результатов...", flush=True)
+    print("💾 Прямая синхронизация файлов (Режим Зеркала)...", flush=True)
     save_and_organize(structured_data, final_mix_list, failed_new)
     save_blacklist(blacklist)
     
