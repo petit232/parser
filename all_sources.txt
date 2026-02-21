@@ -8,7 +8,9 @@ https://github.com/Kwinshadow/TelegramV2rayCollector/raw/refs/heads/main/sublink
 https://github.com/LalatinaHub/Mineral/raw/refs/heads/master/result/nodes
 https://raw.githubusercontent.com/miladtahanian/multi-proxy-config-
 https://raw.githubusercontent.com/mehran1404/Sub_Link/refs/heads/main/V2RAY-Sub.txt
-
+https://raw.githubusercontent.com/shabane/kamaji/master/hub/merged.txt
+https://raw.githubusercontent.com/wuqb2i4f/xray-config-toolkit/main/output/base64/mix-uri
+https://raw.githubusercontent.com/AzadNetCH/Clash/refs/heads/main/AzadNet.txt
 https://raw.githubusercontent.com/STR97/STRUGOV/refs/heads/main/STR.BYPASS
 https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/vless.txt
 https://raw.githubusercontent.com/lagzian/SS-Collector/main/mix_clash.yaml
