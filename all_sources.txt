@@ -19,3 +19,34 @@ https://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt
 https://raw.githubusercontent.com/petit232/parser/refs/heads/main/germany.txt?token=GHSAT0AAAAAADSZ4KUQXRQK3TCRX6BC76GG2MZNT6Q
 https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/BY.txt
 https://raw.githubusercontent.com/petit232/parser/refs/heads/main/germany.txt?token=GHSAT0AAAAAADSZ4KUQXRQK3TCRX6BC76GG2MZNT6Q
+# Все VLESS конфигурации
+wget https://raw.githubusercontent.com/kort0881/vpn-vless-configs-russia/main/githubmirror/clean/vless.txt
+
+# Только российские серверы
+wget https://raw.githubusercontent.com/kort0881/vpn-vless-configs-russia/main/githubmirror/ru-sni/vless_ru.txt
+"https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/refs/heads/main/config.txt",
+    "https://raw.githubusercontent.com/roosterkid/openproxylist/main/V2RAY_RAW.txt",
+    "https://github.com/Epodonios/v2ray-configs/raw/main/Splitted-By-Protocol/trojan.txt",
+    "https://raw.githubusercontent.com/YasserDivaR/pr0xy/refs/heads/main/ShadowSocks2021.txt",
+    "https://raw.githubusercontent.com/mohamadfg-dev/telegram-v2ray-configs-collector/refs/heads/main/category/vless.txt",
+    "https://raw.githubusercontent.com/mheidari98/.proxy/refs/heads/main/vless",
+    "https://raw.githubusercontent.com/youfoundamin/V2rayCollector/main/mixed_iran.txt",
+    "https://raw.githubusercontent.com/mheidari98/.proxy/refs/heads/main/all",
+    "https://github.com/Kwinshadow/TelegramV2rayCollector/raw/refs/heads/main/sublinks/mix.txt",
+    "https://github.com/LalatinaHub/Mineral/raw/refs/heads/master/result/nodes",
+    "https://raw.githubusercontent.com/miladtahanian/multi-proxy-config-fetcher/refs/heads/main/configs/proxy_configs.txt",
+    "https://raw.githubusercontent.com/Pawdroid/Free-servers/refs/heads/main/sub",
+    "https://github.com/MhdiTaheri/V2rayCollector_Py/raw/refs/heads/main/sub/Mix/mix.txt",
+    "https://github.com/Epodonios/v2ray-configs/raw/main/Splitted-By-Protocol/vmess.txt",
+    "https://github.com/MhdiTaheri/V2rayCollector/raw/refs/heads/main/sub/mix",
+    "https://raw.githubusercontent.com/mehran1404/Sub_Link/refs/heads/main/V2RAY-Sub.txt",
+    "https://raw.githubusercontent.com/shabane/kamaji/master/hub/merged.txt",
+    "https://raw.githubusercontent.com/wuqb2i4f/xray-config-toolkit/main/output/base64/mix-uri",
+    "https://raw.githubusercontent.com/AzadNetCH/Clash/refs/heads/main/AzadNet.txt",
+    "https://raw.githubusercontent.com/STR97/STRUGOV/refs/heads/main/STR.BYPASS",
+    "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/vless.txt",
+    "https://raw.githubusercontent.com/lagzian/SS-Collector/main/mix_clash.yaml",
+    "https://raw.githubusercontent.com/Argh94/V2RayAutoConfig/refs/heads/main/configs/Vless.txt",
+    "https://raw.githubusercontent.com/Argh94/V2RayAutoConfig/refs/heads/main/configs/Hysteria2.txt",
+    "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_list.json",
+    "https://raw.githubusercontent.com/NiREvil/vless/main/sub/SSTime",
