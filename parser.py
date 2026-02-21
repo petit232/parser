@@ -129,14 +129,32 @@ class MonsterParser:
                 except: pass
 
     def init_geo(self):
-        """Инициализация базы GeoIP2."""
+        """Инициализация базы GeoIP2 с защитой от битых файлов."""
         if not os.path.exists(GEOIP_DB):
-            logger.warning(f"GeoIP Database not found at {GEOIP_DB}. Sorting by countries will be limited.")
+            logger.warning(f"⚠️ GeoIP Database NOT FOUND at {GEOIP_DB}. Sorting will be limited.")
             return None
+            
         try:
-            return geoip2.database.Reader(GEOIP_DB)
+            # Проверка размера: база Country обычно весит > 1.5MB
+            # Если файл меньше 1MB, значит это ошибка скачивания (HTML/Text)
+            file_size = os.path.getsize(GEOIP_DB)
+            if file_size < 1048576: 
+                logger.error(f"❌ GeoIP file is too small ({file_size} bytes). Likely corrupted or 404. Skipping.")
+                return None
+
+            reader = geoip2.database.Reader(GEOIP_DB)
+            # Тестовый запрос для проверки валидности структуры
+            reader.country('8.8.8.8') 
+            logger.info(f"✅ GeoIP Engine ready (Size: {file_size/1024/1024:.2f} MB)")
+            return reader
         except Exception as e:
-            logger.error(f"GeoIP Error: {e}")
+            logger.error(f"❌ GeoIP Init Error: {e}")
+            # Если файл битый, лучше его удалить, чтобы Workflow перекачал его в следующий раз
+            try:
+                if "valid MaxMind" in str(e):
+                    os.remove(GEOIP_DB)
+                    logger.info("🗑️ Corrupted GeoIP file removed for re-download.")
+            except: pass
             return None
 
     def load_state(self):
