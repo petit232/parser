@@ -3,11 +3,11 @@ name: VPN Monster Auto-Update
 on:
   push:
     paths:
-      - 'all_sources.txt'  # Следим только за этим файлом
+      - 'all_sources.txt'
       - 'parser.py'
   schedule:
-    - cron: '0 */6 * * *'  # Каждые 6 часов для профилактики
-  workflow_dispatch:      # Кнопка ручного запуска
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,5 +34,5 @@ jobs:
           git config --local user.email "bot@github.com"
           git config --local user.name "VPN-Monster-Bot"
           git add *.txt
-          git commit -m "Monster Update: $(date)" || echo "No changes"
+          git commit -m "Auto-Update: $(date)" || echo "No changes"
           git push
