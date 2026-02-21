@@ -6,11 +6,7 @@ https://raw.githubusercontent.com/youfoundamin/V2rayCollector/main/mixed_iran.tx
 https://raw.githubusercontent.com/mheidari98/.proxy/refs/heads/main/all
 https://github.com/Kwinshadow/TelegramV2rayCollector/raw/refs/heads/main/sublinks/mix.txt
 https://github.com/LalatinaHub/Mineral/raw/refs/heads/master/result/nodes
-https://raw.githubusercontent.com/miladtahanian/multi-proxy-config-fetcher/refs/heads/main/configs/proxy_configs.txt
-https://raw.githubusercontent.com/Pawdroid/Free-servers/refs/heads/main/sub
-https://github.com/MhdiTaheri/V2rayCollector_Py/raw/refs/heads/main/sub/Mix/mix.txt
-https://github.com/Epodonios/v2ray-configs/raw/main/Splitted-By-Protocol/vmess.txt
-https://github.com/MhdiTaheri/V2rayCollector/raw/refs/heads/main/sub/mixhttps://raw.githubusercontent.com/youfoundamin/V2rayCollector/main/mixed_iran.txt
+https://raw.githubusercontent.com/miladtahanian/multi-proxy-config-
 
 https://raw.githubusercontent.com/mehran1404/Sub_Link/refs/heads/main/V2RAY-Sub.txt
 https://raw.githubusercontent.com/shabane/kamaji/master/hub/merged.txt
