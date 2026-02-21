@@ -24,11 +24,8 @@ logging.basicConfig(
 logger = logging.getLogger("MonsterEngine")
 
 # --- DIRECTORY STRUCTURE ---
-# We prioritize Latin names but keep references to old Cyrillic ones for migration
 DB_DIR = 'database'   
 OUTPUT_DIR = 'proxy'  
-OLD_DB_DIR = 'база данных'
-OLD_PROXY_DIR = 'прокси'
 
 # Files inside "database"
 SOURCE_FILE = 'all_sources.txt'
@@ -90,7 +87,6 @@ class MonsterParser:
     
     def __init__(self):
         self.start_time = time.time()
-        # IMPORTANT: First ensure folders exist, then migrate, THEN load GeoIP
         self.ensure_structure()
         self.migrate_old_data()
         self.state = self.load_state()
@@ -106,10 +102,10 @@ class MonsterParser:
 
     def ensure_structure(self):
         """Проверяет наличие папок и создает их только при необходимости."""
-        for directory in [DB_DIR, OUTPUT_DIR]:
-            if not os.path.exists(directory):
-                os.makedirs(directory, exist_ok=True)
-                logger.info(f"📁 Created directory: {directory}")
+        if not os.path.exists(DB_DIR):
+            os.makedirs(DB_DIR, exist_ok=True)
+        if not os.path.exists(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
             
         if not os.path.exists(SOURCE_FILE):
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
@@ -117,49 +113,30 @@ class MonsterParser:
 
     def migrate_old_data(self):
         """Перенос данных из кириллических папок в латиницу."""
-        old_folders = {OLD_DB_DIR: DB_DIR, OLD_PROXY_DIR: OUTPUT_DIR}
+        old_folders = {'база данных': DB_DIR, 'прокси': OUTPUT_DIR}
         for old, new in old_folders.items():
             if os.path.exists(old) and os.path.isdir(old):
-                logger.info(f"🔄 Migration triggered: '{old}' -> '{new}'")
+                logger.info(f"🔄 Migration: '{old}' -> '{new}'")
                 for item in os.listdir(old):
                     src = os.path.join(old, item)
                     dst = os.path.join(new, item)
                     try:
-                        if os.path.exists(dst): 
-                            if os.path.isfile(src): os.remove(src)
-                        else: 
-                            shutil.move(src, dst)
+                        if os.path.exists(dst): os.remove(src)
+                        else: shutil.move(src, dst)
                     except Exception as e:
-                        logger.error(f"Migration error for {item}: {e}")
-                try: 
-                    os.rmdir(old)
-                    logger.info(f"🗑️ Removed old directory: {old}")
+                        logger.debug(f"Migration error: {e}")
+                try: os.rmdir(old)
                 except: pass
 
     def init_geo(self):
-        """Инициализация базы GeoIP2 с проверкой путей."""
-        # Check primary path first
-        target_path = GEOIP_DB
-        
-        # Fallback check if migration failed or file is still in old folder
-        if not os.path.exists(target_path):
-            alternative = os.path.join(OLD_DB_DIR, 'GeoLite2-Country.mmdb')
-            if os.path.exists(alternative):
-                target_path = alternative
-                logger.info(f"🌍 Found GeoIP in alternative path: {target_path}")
-
-        if not os.path.exists(target_path):
-            logger.warning(f"⚠️ GeoIP Database NOT FOUND at {target_path}. Sorting will fail!")
+        """Инициализация базы GeoIP2."""
+        if not os.path.exists(GEOIP_DB):
+            logger.warning(f"GeoIP Database not found at {GEOIP_DB}. Sorting by countries will be limited.")
             return None
-            
         try:
-            reader = geoip2.database.Reader(target_path)
-            # Test lookup
-            reader.country('8.8.8.8')
-            logger.info(f"✅ GeoIP Engine initialized from: {target_path}")
-            return reader
+            return geoip2.database.Reader(GEOIP_DB)
         except Exception as e:
-            logger.error(f"❌ GeoIP Error: {e}")
+            logger.error(f"GeoIP Error: {e}")
             return None
 
     def load_state(self):
@@ -238,8 +215,7 @@ class MonsterParser:
         """Определение страны по IP."""
         if not self.geo_reader or not ip: return None
         try:
-            code = self.geo_reader.country(ip).country.iso_code
-            return code
+            return self.geo_reader.country(ip).country.iso_code
         except: return None
 
     def apply_fragmentation(self, link):
@@ -412,7 +388,7 @@ class MonsterParser:
                 "last_run": datetime.now().isoformat()
             })
             self.save_state()
-            logger.info(f"✅ Engine Cycle Finished. GeoIP Status: {'Active' if self.geo_reader else 'Disabled'}")
+            logger.info("✅ Engine Cycle Finished. Distribution verified.")
 
         except Exception as e:
             logger.error(f"Critical System Error: {e}", exc_info=True)
