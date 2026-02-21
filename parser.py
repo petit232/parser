@@ -54,12 +54,12 @@ PING_LIMITS = {
     'RU': 250
 }
 
-# Специальный порог для "инвалидных" серверов (медленные, но важные)
+# Пороги для "инвалидных" серверов (медленные, но из приоритетных регионов)
 INVALID_THRESHOLD_MIN = 250
-INVALID_THRESHOLD_MAX = 350 # Расширил до 350 для запаса по США/КЗ
+INVALID_THRESHOLD_MAX = 350 
 INVALID_REGIONS = {'BY', 'KZ', 'US'}
 
-# Приоритетные регионы (сортируются в начало очереди)
+# Приоритетные регионы для сортировки очереди
 PRIORITY_REGIONS = {'BY', 'KZ', 'DE', 'FI', 'SE', 'LV', 'RU', 'US', 'CH', 'FR'}
 
 # --- COUNTRY TO FILE MAPPING (Strict 10 Countries) ---
@@ -76,13 +76,13 @@ COUNTRY_MAP = {
     'SE': 'sweden.txt'
 }
 DEFAULT_MIX = 'mix.txt'
-INVALID_FILE = 'invalid.txt' # Тот самый файл для медленных BY, KZ, US
+INVALID_FILE = 'invalid.txt' 
 MAX_NODES_PER_FILE = 500
 
 class MonsterParser:
     """
     Advanced engine for parsing, checking, and distributing proxy configurations.
-    Maintains strict file structure and updates metadata for GitHub tracking.
+    Maintains strict file structure and ensures valid distribution by regions.
     """
     
     def __init__(self):
@@ -92,16 +92,16 @@ class MonsterParser:
         self.state = self.load_state()
         self.geo_reader = self.init_geo()
         
-        # Optimized regex patterns
+        # Регулярные выражения для парсинга
         self.proxy_pattern = re.compile(r'(vless|vmess|trojan|ss|ssr)://[^\s"\'<>()]+')
         self.ip_pattern = re.compile(r'@?([\w\.-]+):(\d+)')
         
         self.semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
-        # Список всех файлов, которые МЫ ОБЯЗАНЫ ОБНОВИТЬ (включая invalid.txt)
+        # 12 обязательных файлов: 10 стран + микс + отстойник
         self.mandatory_files = set(COUNTRY_MAP.values()) | {DEFAULT_MIX, INVALID_FILE}
 
     def ensure_structure(self):
-        """Ensures directories and basic files exist."""
+        """Создает структуру папок и базовые файлы."""
         os.makedirs(DB_DIR, exist_ok=True)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         if not os.path.exists(SOURCE_FILE):
@@ -109,11 +109,11 @@ class MonsterParser:
                 f.write("# Monster Engine Source List\n")
 
     def migrate_old_data(self):
-        """Moves data from old Cyrillic folders to new Latin structure if needed."""
+        """Перенос данных из кириллических папок в латиницу."""
         old_folders = {'база данных': DB_DIR, 'прокси': OUTPUT_DIR}
         for old, new in old_folders.items():
             if os.path.exists(old) and os.path.isdir(old):
-                logger.info(f"🔄 Migrating data from '{old}' to '{new}'...")
+                logger.info(f"🔄 Migration: '{old}' -> '{new}'")
                 for item in os.listdir(old):
                     src = os.path.join(old, item)
                     dst = os.path.join(new, item)
@@ -121,12 +121,12 @@ class MonsterParser:
                         if os.path.exists(dst): os.remove(src)
                         else: shutil.move(src, dst)
                     except Exception as e:
-                        logger.debug(f"Migration error for {item}: {e}")
+                        logger.debug(f"Migration error: {e}")
                 try: os.rmdir(old)
                 except: pass
 
     def init_geo(self):
-        """Initializes GeoIP2 Database reader."""
+        """Инициализация базы GeoIP2."""
         if os.path.exists(GEOIP_DB):
             try:
                 return geoip2.database.Reader(GEOIP_DB)
@@ -135,8 +135,8 @@ class MonsterParser:
         return None
 
     def load_state(self):
-        """Loads persistent engine state."""
-        default = {"last_index": 0, "processed_total": 0, "dead_total": 0, "history": []}
+        """Загрузка состояния парсера."""
+        default = {"last_index": 0, "processed_total": 0, "dead_total": 0}
         if os.path.exists(STATE_FILE):
             try:
                 with open(STATE_FILE, 'r', encoding='utf-8') as f:
@@ -146,7 +146,7 @@ class MonsterParser:
         return default
 
     def save_state(self):
-        """Saves current engine state."""
+        """Сохранение состояния парсера."""
         try:
             with open(STATE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.state, f, indent=4, ensure_ascii=False)
@@ -154,7 +154,7 @@ class MonsterParser:
             logger.error(f"Save State Error: {e}")
 
     def get_host_port(self, link):
-        """Extracts hostname and port from proxy string."""
+        """Извлечение хоста и порта из ссылки."""
         try:
             match = self.ip_pattern.search(link)
             if match: return match.group(1), match.group(2)
@@ -162,7 +162,7 @@ class MonsterParser:
         return None, None
 
     async def fetch_subscription(self, session, url):
-        """Downloads and extracts proxies from a subscription URL."""
+        """Загрузка данных по ссылке-подписке."""
         try:
             async with session.get(url, timeout=15) as response:
                 if response.status == 200:
@@ -176,7 +176,7 @@ class MonsterParser:
         return []
 
     async def check_node(self, session, host, port, ip_cache):
-        """Validates proxy node via TCP check and DNS resolution."""
+        """Проверка ноды: DNS резолв и TCP коннект."""
         if not host or not port: return None, 9999
         
         key = f"{host}:{port}"
@@ -185,10 +185,12 @@ class MonsterParser:
         async with self.semaphore:
             start = time.time()
             try:
+                # DNS RESOLVE - Ключевой этап
                 ip = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(None, socket.gethostbyname, host),
                     timeout=TIMEOUT
                 )
+                # TCP CONNECT
                 _, writer = await asyncio.wait_for(
                     asyncio.open_connection(ip, int(port)),
                     timeout=TIMEOUT
@@ -205,14 +207,14 @@ class MonsterParser:
                 return None, 9999
 
     def get_country_code(self, ip):
-        """Returns ISO country code for given IP."""
+        """Определение страны по IP."""
         if not self.geo_reader or not ip: return None
         try:
             return self.geo_reader.country(ip).country.iso_code
         except: return None
 
     def apply_fragmentation(self, link):
-        """Applies fragmentation and mux to VLESS/VMESS/Trojan for RU bypass."""
+        """Добавление фрагментации для VLESS/VMESS/Trojan (обход блокировок RU)."""
         try:
             parsed = urlparse(link)
             if parsed.scheme in ['vless', 'vmess', 'trojan']:
@@ -227,7 +229,7 @@ class MonsterParser:
         return link
 
     def update_links_manifest(self):
-        """Updates the LINKS_FOR_CLIENTS.txt file with stable Latin URLs."""
+        """Обновление файла со ссылками для клиентов."""
         try:
             base_url = "https://raw.githubusercontent.com/USER/REPO/main/proxy"
             try:
@@ -240,7 +242,7 @@ class MonsterParser:
                 "🚀 MONSTER ENGINE - LIVE PROXY LINKS",
                 "="*40,
                 f"Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                "Note: These links are static and reliable.",
+                "Note: Links are static. Distribution is updated every 20m.",
                 ""
             ]
             
@@ -252,15 +254,14 @@ class MonsterParser:
                 
             with open(LINKS_INFO_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(lines))
-            logger.info("📄 Manifest updated.")
         except Exception as e:
             logger.error(f"Manifest Error: {e}")
 
     async def run(self):
-        """Execution Entry Point."""
+        """Основной цикл движка."""
         if os.path.exists(LOCK_FILE):
             if (time.time() - os.path.getmtime(LOCK_FILE)) < 1200:
-                logger.warning("Engine locked. Skipping run.")
+                logger.warning("Engine is locked. Parallel run prevented.")
                 return
         
         try:
@@ -289,8 +290,10 @@ class MonsterParser:
                         os.utime(p, None)
                     return
 
+                # Расчет батча
                 batch_size = max(500, int(total / ((CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN)))
                 pool_list = list(unique_pool)
+                # Сортировка: приоритетные регионы вперед
                 pool_list.sort(key=lambda x: any(reg in x.upper() for reg in PRIORITY_REGIONS), reverse=True)
                 
                 idx = self.state.get("last_index", 0)
@@ -300,85 +303,90 @@ class MonsterParser:
                 ip_cache = {}
                 results = await asyncio.gather(*[self.check_node(session, *self.get_host_port(l), ip_cache) for l in batch])
                 
-                processed_nodes = [] # Список словарей с метаданными
+                valid_nodes = [] # Узлы с метаданными
                 dead_set = set()
                 
                 for i, (ip, ping) in enumerate(results):
                     link = batch[i]
+                    if not ip: # DNS Fail = Dead
+                        dead_set.add(link)
+                        continue
+                        
                     cc = self.get_country_code(ip)
                     limit = PING_LIMITS.get(cc, PING_LIMITS['DEFAULT'])
                     
-                    # Логика распределения
-                    if ip:
-                        if ping <= limit:
-                            # Хороший сервер
-                            final_link = self.apply_fragmentation(link) if cc == 'RU' else link
-                            processed_nodes.append({"link": final_link, "cc": cc, "type": "good"})
-                        elif cc in INVALID_REGIONS and INVALID_THRESHOLD_MIN <= ping <= INVALID_THRESHOLD_MAX:
-                            # Медленный приоритетный (BY, KZ, US) -> в invalid.txt
-                            processed_nodes.append({"link": link, "cc": cc, "type": "invalid"})
-                        else:
-                            # Совсем плохой пинг
-                            dead_set.add(link)
+                    if ping <= limit:
+                        # Хорошая нода
+                        final_link = self.apply_fragmentation(link) if cc == 'RU' else link
+                        valid_nodes.append({"link": final_link, "cc": cc, "type": "good"})
+                    elif cc in INVALID_REGIONS and INVALID_THRESHOLD_MIN <= ping <= INVALID_THRESHOLD_MAX:
+                        # Инвалидная нода (медленная, но из BY/KZ/US)
+                        valid_nodes.append({"link": link, "cc": cc, "type": "invalid"})
                     else:
+                        # Пинг выше всех норм
                         dead_set.add(link)
 
-            # File Distribution
+            # Чистка мусора в папке прокси
             for f in os.listdir(OUTPUT_DIR):
                 if f.endswith('.txt') and f not in self.mandatory_files and f != os.path.basename(LINKS_INFO_FILE):
                     try: os.remove(os.path.join(OUTPUT_DIR, f))
                     except: pass
 
+            # Глобальное распределение по файлам
             for filename in self.mandatory_files:
                 target_path = os.path.join(OUTPUT_DIR, filename)
-                file_nodes = {}
+                file_content = {}
                 
-                # Читаем старое содержимое
+                # 1. Берем выжившее старое
                 if os.path.exists(target_path):
                     with open(target_path, 'r', encoding='utf-8') as f:
                         for line in f:
                             node = line.strip()
                             if node in unique_pool and node not in dead_set:
-                                file_nodes[node] = True
+                                file_content[node] = True
                 
-                # Наполняем новыми результатами
-                for res in processed_nodes:
-                    if res['type'] == "good":
-                        # Обычное распределение по странам или в микс
-                        assigned_file = COUNTRY_MAP.get(res['cc'], DEFAULT_MIX)
-                        if assigned_file == filename:
-                            file_nodes[res['link']] = True
-                    elif res['type'] == "invalid":
-                        # Все медленные приоритетные - строго в invalid.txt
+                # 2. Добавляем новое по жесткой логике
+                for node_data in valid_nodes:
+                    node_cc = node_data['cc']
+                    node_link = node_data['link']
+                    
+                    if node_data['type'] == "invalid":
+                        # Только в invalid.txt
                         if filename == INVALID_FILE:
-                            file_nodes[res['link']] = True
-                
-                # ВСЕГДА пишем в файл (Touch logic)
-                with open(target_path, 'w', encoding='utf-8') as f:
-                    content = list(file_nodes.keys())[:MAX_NODES_PER_FILE]
-                    if content:
-                        f.write('\n'.join(content) + '\n')
+                            file_content[node_link] = True
                     else:
-                        # Обязательная активность для GitHub
-                        f.write(f"# Monster Log Update: {datetime.now().strftime('%H:%M:%S')}\n")
+                        # Тип "good" - распределяем по странам
+                        assigned_file = COUNTRY_MAP.get(node_cc, DEFAULT_MIX)
+                        if assigned_file == filename:
+                            file_content[node_link] = True
+
+                # 3. Финальная запись (Strict Touch)
+                with open(target_path, 'w', encoding='utf-8') as f:
+                    nodes_list = list(file_content.keys())[:MAX_NODES_PER_FILE]
+                    if nodes_list:
+                        f.write('\n'.join(nodes_list) + '\n')
+                    else:
+                        # Сохраняем активность файла для GitHub
+                        f.write(f"# Monster Update: {datetime.now().strftime('%H:%M:%S')} | Total Nodes: 0\n")
                 
                 os.utime(target_path, None)
 
-            # Finalize
+            # Обновление all_sources
             updated_sources = [s for s in raw if s.startswith('http') or (s in unique_pool and s not in dead_set)]
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(updated_sources) + '\n')
 
+            # Апдейт стейта
             self.state.update({
                 "last_index": idx + batch_size,
                 "processed_total": self.state.get("processed_total", 0) + len(batch),
-                "last_sync": datetime.now().isoformat()
+                "last_run": datetime.now().isoformat()
             })
             self.save_state()
-            logger.info("✅ Full cycle with Invalid-routing finished.")
+            logger.info("✅ Engine Cycle Finished. Distribution verified.")
 
         except Exception as e:
-            logger.error(f"Critical Error: {e}", exc_info=True)
+            logger.error(f"Critical System Error: {e}", exc_info=True)
         finally:
             if os.path.exists(LOCK_FILE):
                 try: os.remove(LOCK_FILE)
