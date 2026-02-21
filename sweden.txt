@@ -5,4 +5,4 @@ vless://d2d79fd8-a3d4-4792-9766-e472e1fe8a5f@45.8.93.110:443?mode=gun&security=r
 vless://f6f0196d-4484-4a17-9553-0c4b646cde7c@185.146.173.95:2095/?type=ws&encryption=none&host=V2ray-_-_-_-_-_-ShhProxy.TelegramChannelJoinBede.com.&path=🔒
 
 # Total: 5
-# Updated: 2026-02-21 11:01:38
+# Updated: 2026-02-21 11:03:10
