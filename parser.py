@@ -151,6 +151,10 @@ def pre_populate_ip_cache():
     files = [f"{c}.txt" for c in COUNTRIES] + ["mix.txt"]
     loaded_count = 0
     
+    # Очищаем кэш перед загрузкой, чтобы не было старых данных
+    with CACHE_LOCK:
+        IP_CACHE.clear()
+
     for f_name in files:
         if os.path.exists(f_name):
             country_code = None
@@ -288,7 +292,7 @@ def save_and_organize(structured, final_mix_list, failed_list):
                     f.write("\n".join(valid))
                     f.write(f"\n\n# Total Active: {len(valid)}\n# Synced: {now_str}")
                 else:
-                    # Если узлов нет — файл становится пустым сервисным сообщением
+                    # ПРИНУДИТЕЛЬНО затираем файл, если узлов нет
                     f.write(f"# No active nodes found for {country}\n# Synced: {now_str}")
         except: pass
 
@@ -326,23 +330,22 @@ def git_commit_push():
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
         
-        # Принудительно забираем актуальное состояние, чтобы не было конфликтов
+        # Принудительно забираем актуальное состояние
         subprocess.run(["git", "fetch", "origin"], check=True)
         subprocess.run(["git", "reset", "--hard", "origin/main"], check=True)
         
         subprocess.run(["git", "add", "*.txt"], check=True)
         
-        # Мы убрали проверку на "diff --quiet", чтобы коммит шел всегда, так как время в файлах меняется
+        # ПРИНУДИТЕЛЬНЫЙ коммит. Мы убрали проверку "nothing to commit", так как время в файлах меняется всегда.
         msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M:%S')} | Mirror Sync Active"
         commit_res = subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True)
         
-        if "nothing to commit" in commit_res.stdout:
-            print("[Git] Файлы уже синхронизированы. Изменений нет.")
-            return
-            
-        # Force push гарантирует, что репозиторий будет точной копией локальных данных
+        # Если изменений действительно нет (даже микросекунды не изменились), мы все равно пушим существующее
+        # Но при нашей логике с now_str изменения есть ВСЕГДА.
+        
+        # Force push гарантирует, что GitHub будет точной копией того, что нагенерировал скрипт
         subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
-        print("[Git] Зеркало успешно обновлено!")
+        print("[Git] Зеркало успешно обновлено в GitHub!")
     except Exception as e:
         print(f"[Git] Ошибка при пуше: {e}")
 
@@ -385,30 +388,32 @@ def process_monster_engine():
         with open('all_sources.txt', 'r', encoding='utf-8') as f:
             sources = list(set([l.strip() for l in f if l.strip()]))
     
+    # Режим "Зеркала": если источников нет, мы всё равно идем дальше, чтобы очистить файлы
     if not sources:
-        print("[!] ВНИМАНИЕ: all_sources.txt пуст. Будет выполнена полная очистка всех подписок!")
+        print("[!] ВНИМАНИЕ: all_sources.txt пуст. Будет выполнена полная очистка всех подписок!", flush=True)
 
     blacklist = load_blacklist()
     raw_configs = []
     
-    print(f"📡 Сбор данных из {len(sources)} источников...", flush=True)
-    for url in sources:
-        try:
-            # Игнорируем собственные результирующие файлы во избежание рекурсии
-            if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
-                continue
-            r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
-            text = r.text
-            
-            # Попытка декодировать, если это подписка в base64
-            if not any(p in text for p in ALLOWED_PROTOCOLS):
-                decoded = decode_base64(text)
-                if decoded: text = decoded
-            
-            regex_pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
-            found = re.findall(regex_pattern, text)
-            raw_configs.extend(found)
-        except Exception: pass
+    if sources:
+        print(f"📡 Сбор данных из {len(sources)} источников...", flush=True)
+        for url in sources:
+            try:
+                # Игнорируем собственные результирующие файлы во избежание рекурсии
+                if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
+                    continue
+                r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
+                text = r.text
+                
+                # Попытка декодировать, если это подписка в base64
+                if not any(p in text for p in ALLOWED_PROTOCOLS):
+                    decoded = decode_base64(text)
+                    if decoded: text = decoded
+                
+                regex_pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
+                found = re.findall(regex_pattern, text)
+                raw_configs.extend(found)
+            except Exception: pass
 
     raw_configs = list(set(raw_configs))
     print(f"🔍 Найдено уникальных ссылок для проверки: {len(raw_configs)}")
@@ -474,6 +479,10 @@ def process_monster_engine():
     print("💾 Прямая синхронизация файлов (Режим Зеркала)...", flush=True)
     save_and_organize(structured_data, final_mix_list, failed_new)
     save_blacklist(blacklist)
+    
+    # Чистим память перед пушем
+    global_seen.clear()
+    gc.collect()
     
     git_commit_push()
     
