@@ -1,4 +1,4 @@
 vless://cfb4a87c-6108-4c89-a1a4-eb644dfdea03@fi-2.vpnd.io:1020?type=tcp&security=reality&encryption=none&pbk=tQP8iJn71qlfo3wM5bkW6Ic-LOF9I8j9l-6sJ3dhYWA&fp=random&sni=yahoo.com&sid=e28474253a4a&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%AB%F0%9F%87%AE%20Finland%20%7C%20FI%20%F0%9F%87%AB%F0%9F%87%AE%20%E2%9D%A4%EF%B8%8F
 
 # Total: 1
-# Updated: 2026-02-21 11:45:27
+# Updated: 2026-02-21 11:45:30
