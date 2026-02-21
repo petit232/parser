@@ -3,18 +3,26 @@ import re
 import requests
 import base64
 
-# --- ТОЧНЫЕ НАСТРОЙКИ ГЕОГРАФИИ ---
-# Используем регулярные выражения \b для точного поиска слов
+# --- ОБЪЕДИНЕННЫЙ СЛОВАРЬ МАРКЕРОВ (Флаги, Города, Аэропорты, Домены) ---
 COUNTRIES = {
-    "belarus": {"keys": [r"by", r"bel", r"minsk", r"беларусь", r"минск"], "flag": "🇧🇾"},
-    "kazakhstan": {"keys": [r"kz", r"kaz", r"almaty", r"astana", r"казахстан", r"алматы"], "flag": "🇰🇿"},
-    "germany": {"keys": [r"de", r"ger", r"frankfurt", r"germany", r"германия"], "flag": "🇩🇪"},
-    "poland": {"keys": [r"pl", r"pol", r"warsaw", r"poland", r"польша"], "flag": "🇵🇱"},
-    "usa": {"keys": [r"us", r"usa", r"america", r"united states", r"сша"], "flag": "🇺🇸"},
-    "sweden": {"keys": [r"se", r"swe", r"stockholm", r"швеция"], "flag": "🇸🇪"},
-    "netherlands": {"keys": [r"nl", r"neth", r"amsterdam", "нидерланды"], "flag": "🇳🇱"},
-    "russia": {"keys": [r"ru", r"rus", r"russia", r"россия", r"moscow"], "flag": "🇷🇺"}
+    "belarus": {"keys": ["🇧🇾", "by", "belarus", "беларусь", "минск", "minsk", "msq", "by.adr-cloud.ru", "by.cdn.titun.su"], "flag": "🇧🇾"},
+    "kazakhstan": {"keys": ["🇰🇿", "kazakhstan", "казахстан", "алматы", "астана", "astana", "almaty", "ala", "tse", "kz.adrenaline-fast.ru", "kz1.sky-vault.top", "pavlodar"], "flag": "🇰🇿"},
+    "germany": {"keys": ["🇩🇪", "germany", "германия", "frankfurt", "berlin", "fra", "falkenstein", "⚡️de", "germ.adrenaline-fast.ru", "de.cdn.stun.su", "de5.sky-vault.top", "freede.spectrum.vu", "dreieich", "hennigsdorf", "limburg", "nuremberg"], "flag": "🇩🇪"},
+    "poland": {"keys": ["🇵🇱", "poland", "польша", "warsaw", "warszawa", "waw", "pl", "plr.strelkavpn.ru"], "flag": "🇵🇱"},
+    "usa": {"keys": ["🇺🇸", "usa", "сша", "united states", "america", "jfk", "lax", "sjc", "microsoft", "volumedrive", "us"], "flag": "🇺🇸"},
+    "sweden": {"keys": ["🇸🇪", "sweden", "швеция", "stockholm", "sto", "se", "sw.adr-cloud.ru", "game-sw.adrtun.ru", "secdn16.suio.me", "spånga", "östhammar"], "flag": "🇸🇪"},
+    "netherlands": {"keys": ["🇳🇱", "netherlands", "нидерланды", "amsterdam", "ams", "nl", "download.lastilhame.monster"], "flag": "🇳🇱"},
+    "latvia_lithuania": {"keys": ["🇱🇻", "🇱🇹", "latvia", "lithuania", "латвия", "литва", "riga", "vilnius", "rix", "vno", "lat.adrenaline-fast.ru"], "flag": "🇱🇻"},
+    "russia": {"keys": ["🇷🇺", "russia", "россия", "moscow", "mow", "svo", "dme", "vko", "led", "saint-petersburg", "ru", "rus"], "flag": "🇷🇺"},
+    "singapore": {"keys": ["🇸🇬", "singapore", "сингапур", "sin", "changi", "sg"], "flag": "🇸🇬"},
+    "uk": {"keys": ["🇬🇧", "uk", "gb", "united kingdom", "london", "lon", "lhr"], "flag": "🇬🇧"},
+    "hongkong": {"keys": ["🇭🇰", "hong kong", "гонконг", "hkg", "hk"], "flag": "🇭🇰"},
+    "finland": {"keys": ["🇫🇮", "finland", "финляндия", "helsinki", "hel", "fi"], "flag": "🇫🇮"},
+    "france": {"keys": ["🇫🇷", "france", "франция", "paris", "cdg", "ovh", "fr"], "flag": "🇫🇷"}
 }
+
+# Ключи для удаления мусора (чтобы не путать с другими странами)
+BLACKLIST = ["anycast", "relay", "multi", "wangcai2", "bl"]
 
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
@@ -22,18 +30,14 @@ def decode_base64(data):
     try:
         data = data.strip()
         missing_padding = len(data) % 4
-        if missing_padding:
-            data += '=' * (4 - missing_padding)
+        if missing_padding: data += '=' * (4 - missing_padding)
         return base64.b64decode(data).decode('utf-8')
-    except:
-        return data
+    except: return data
 
 def process():
     all_raw_data = []
     source_file = 'all_sources.txt'
-
-    if not os.path.exists(source_file):
-        return
+    if not os.path.exists(source_file): return
 
     with open(source_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -48,8 +52,7 @@ def process():
                 resp = requests.get(line, timeout=15)
                 content = decode_base64(resp.text)
                 all_raw_data.extend(content.splitlines())
-            except:
-                pass
+            except: pass
 
     structured_data = {country: set() for country in COUNTRIES}
     mix_data = set()
@@ -57,41 +60,49 @@ def process():
 
     for config in all_raw_data:
         config = config.strip()
-        if not any(proto in config.lower() for proto in PROTOCOLS):
-            continue
+        if not any(proto in config.lower() for proto in PROTOCOLS): continue
 
-        # 1. Уникальность по адресу (чтобы не дублировать Anycast)
+        # Дедупликация (по хосту и порту)
         server_match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
         if server_match:
-            server_address = server_match.group(2)
-            if server_address in unique_check:
-                continue
-            unique_check.add(server_address)
+            addr = server_match.group(2)
+            if addr in unique_check: continue
+            unique_check.add(addr)
 
-        # 2. Ищем страну ТОЛЬКО в названии (после #)
-        name_part = ""
-        if '#' in config:
-            name_part = config.split('#')[-1].lower()
+        # Анализируем всю строку (и название, и сам адрес сервера)
+        config_lower = config.lower()
+        assigned = False
         
-        found_country = False
-        if name_part:
+        # Сначала ищем по флагам (самый высокий приоритет)
+        for country, info in COUNTRIES.items():
+            if info["flag"] in config:
+                structured_data[country].add(config)
+                assigned = True
+                break
+        
+        # Если флаг не найден, ищем по ключам
+        if not assigned:
             for country, info in COUNTRIES.items():
                 for key in info["keys"]:
-                    # Поиск целого слова, чтобы 'us' не находилось в 'anycast'
-                    if re.search(r'\b' + key + r'\b', name_part):
+                    # Используем поиск с границами для коротких ключей (типа 'us', 'de')
+                    if len(key) <= 3:
+                        if re.search(r'[^a-z0-9]' + re.escape(key) + r'[^a-z0-9]', f" {config_lower} "):
+                            structured_data[country].add(config)
+                            assigned = True
+                            break
+                    elif key in config_lower:
                         structured_data[country].add(config)
-                        found_country = True
+                        assigned = True
                         break
-                if found_country: break
-        
+                if assigned: break
+
         mix_data.add(config)
 
-    # Чистим старые файлы
+    # Чистим старое и пишем новое
     for f in os.listdir('.'):
         if f.endswith('.txt') and f not in ['all_sources.txt', 'requirements.txt']:
             os.remove(f)
 
-    # Сохраняем оригиналы
     for country, configs in structured_data.items():
         if configs:
             with open(f"{country}.txt", 'w', encoding='utf-8') as f:
