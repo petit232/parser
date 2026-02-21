@@ -5,7 +5,6 @@ import base64
 from datetime import datetime
 
 # --- МАКСИМАЛЬНЫЙ СПРАВОЧНИК СТРАН И МАРКЕРОВ ---
-# Этот список определяет, какие файлы будут созданы. Названия файлов (ключи) статичны.
 COUNTRIES = {
     "belarus": {"keys": ["🇧🇾", "by", "belarus", "беларусь", "минск", "minsk", "msq", "by.adr-cloud.ru", "by.cdn.titun.su"], "flag": "🇧🇾"},
     "kazakhstan": {"keys": ["🇰🇿", "kazakhstan", "казахстан", "алматы", "астана", "astana", "almaty", "ala", "tse", "kz.adrenaline-fast.ru", "kz1.sky-vault.top", "pavlodar"], "flag": "🇰🇿"},
@@ -26,7 +25,7 @@ COUNTRIES = {
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
 def decode_base64(data):
-    """Декодирует содержимое, если оно представлено в формате Base64 (стандарт подписок)."""
+    """Декодирует содержимое, если оно представлено в формате Base64."""
     try:
         data = data.strip()
         if not data: return ""
@@ -38,70 +37,91 @@ def decode_base64(data):
         return data
 
 def get_unique_id(config):
-    """
-    Извлекает уникальный адрес и порт сервера. 
-    Нужно для того, чтобы один и тот же сервер не дублировался с разными именами.
-    """
+    """Извлекает уникальный адрес и порт сервера для удаления дубликатов."""
     match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
     return match.group(2) if match else config
 
+def sanitize_sources(file_path):
+    """
+    Защита от затупка: чистит all_sources.txt от дубликатов ссылок, 
+    мусорных символов и пустых строк. Обновляет файл.
+    """
+    if not os.path.exists(file_path):
+        return []
+    
+    print(f"Очистка и проверка {file_path}...")
+    with open(file_path, 'r', encoding='utf-8') as f:
+        raw_lines = f.read().splitlines()
+
+    clean_sources = []
+    seen = set()
+
+    for line in raw_lines:
+        # Удаляем кавычки, запятые, лишние пробелы по краям
+        s = line.strip().strip('",\'').strip()
+        
+        # Пропускаем пустые строки и дубликаты
+        if not s or s in seen:
+            continue
+        
+        # Проверка: является ли это валидной ссылкой или прокси-конфигом
+        if s.startswith("http") or any(proto in s for proto in PROTOCOLS):
+            clean_sources.append(s)
+            seen.add(s)
+
+    # Перезаписываем файл-источник чистыми данными
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(clean_sources))
+    
+    print(f"Очистка завершена. Было: {len(raw_lines)}, стало: {len(clean_sources)}")
+    return clean_sources
+
 def process():
-    all_raw_links = []
     source_file = 'all_sources.txt'
     
-    # Получаем текущую дату и время для метки обновления
+    # Сначала чистим источники (Защита от затупка)
+    sources = sanitize_sources(source_file)
+    
+    if not sources:
+        print("Список источников пуст после очистки.")
+        return
+
+    all_raw_links = []
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     timestamp_mark = f"\n\n# Last Update: {now}"
 
-    if not os.path.exists(source_file):
-        print(f"Файл {source_file} не найден. Проверьте наличие файла в корне репозитория.")
-        return
-
-    # Загрузка источников из файла
-    with open(source_file, 'r', encoding='utf-8') as f:
-        # Убираем кавычки, запятые и пробелы, если они есть
-        sources = [l.strip().strip('",') for l in f.read().splitlines() if l.strip()]
-
-    print(f"Начинаю сбор данных из {len(sources)} источников...")
+    print(f"Начинаю сбор данных из {len(sources)} проверенных источников...")
 
     for url in sources:
-        # Если это ссылка на внешний ресурс
         if url.startswith("http"):
             try:
                 print(f"Загрузка: {url}")
-                # Добавляем User-Agent, чтобы сайты не блокировали запросы
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
                 resp = requests.get(url, headers=headers, timeout=30)
                 if resp.status_code == 200:
                     text = resp.text
-                    # Если в тексте нет явных протоколов, пробуем Base64 декодирование
                     if not any(p in text for p in PROTOCOLS):
                         text = decode_base64(text)
                     
-                    # Извлекаем все конфиги из полученного текста
                     found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', text)
                     all_raw_links.extend(found)
                     print(f"--- Найдено: {len(found)} шт.")
             except Exception as e:
                 print(f"--- Ошибка загрузки {url}: {e}")
-        
-        # Если в файл вставлена прямая ссылка на конфиг
         elif any(proto in url for proto in PROTOCOLS):
             found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', url)
             all_raw_links.extend(found if found else [url])
 
-    # Структуры для хранения отсортированных данных
     structured_data = {country: set() for country in COUNTRIES}
     mix_data = set()
     unique_check = set()
 
-    print("Фильтрация дубликатов и распределение по странам...")
+    print("Фильтрация дубликатов конфигов и распределение по странам...")
 
     for config in all_raw_links:
         config = config.strip()
         uid = get_unique_id(config)
         
-        # Удаление повторов по IP:Port (Глобальная дедупликация)
         if uid in unique_check:
             continue
         unique_check.add(uid)
@@ -109,19 +129,18 @@ def process():
         config_lower = config.lower()
         assigned = False
         
-        # 1. Сначала ищем флаги (самый точный признак)
+        # 1. Поиск по флагам
         for country, info in COUNTRIES.items():
             if info["flag"] in config:
                 structured_data[country].add(config)
                 assigned = True
                 break
         
-        # 2. Затем ищем по ключевым словам (города, домены, сокращения)
+        # 2. Поиск по ключевым словам
         if not assigned:
             for country, info in COUNTRIES.items():
                 for key in info["keys"]:
                     key_low = key.lower()
-                    # Если ключ короткий (2-3 буквы), ищем его как отдельное слово
                     if len(key_low) <= 3:
                         if re.search(r'[^a-z0-9]' + re.escape(key_low) + r'[^a-z0-9]', f" {config_lower} "):
                             structured_data[country].add(config)
@@ -136,24 +155,19 @@ def process():
 
         mix_data.add(config)
 
-    # --- СОХРАНЕНИЕ ФАЙЛОВ ---
-    # Режим 'w' гарантирует, что файл перезаписывается. Ссылка на файл в GitHub НЕ МЕНЯЕТСЯ.
-    print("Сохранение результатов в файлы...")
-    
+    # СОХРАНЕНИЕ
+    print("Сохранение результатов...")
     for country in COUNTRIES:
         filename = f"{country}.txt"
         configs = sorted(list(structured_data[country]))
         with open(filename, 'w', encoding='utf-8') as f:
             if configs:
                 f.write("\n".join(configs))
-            # Добавляем скрытую метку времени, чтобы GitHub видел изменение файла
             f.write(timestamp_mark)
 
-    # Общий файл со всеми найденными уникальными серверами
     with open("mix.txt", 'w', encoding='utf-8') as f:
         if mix_data:
             f.write("\n".join(sorted(list(mix_data))))
-        # Добавляем скрытую метку времени в микс
         f.write(timestamp_mark)
 
     print(f"Готово! Всего уникальных серверов сохранено: {len(mix_data)}")
