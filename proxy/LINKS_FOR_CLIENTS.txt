@@ -1,7 +1,7 @@
 🚀 MONSTER ENGINE - LIVE PROXY LINKS
 ========================================
-Updated: 2026-02-21 20:44:36
-Note: These links are static and reliable.
+Updated: 2026-02-21 20:49:19
+Note: Links are static. Distribution is updated every 20m.
 
 📍 BELARUS:
 https://raw.githubusercontent.com/petit232/parser/main/proxy/belarus.txt
