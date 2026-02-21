@@ -285,9 +285,12 @@ class MonsterParser:
             logger.error(f"Cleanup error: {e}")
 
     def update_links_for_clients(self, files_stats):
-        """Generates a summary file with direct links to all proxy lists."""
+        """Generates a summary file ONLY if it doesn't exist, to keep it static."""
         try:
-            # Get current repo URL for raw links
+            # Check if file already exists. If yes, we skip update to keep it static.
+            if os.path.exists(LINKS_INFO_FILE):
+                return
+
             repo_url = ""
             try:
                 remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).decode().strip()
@@ -296,26 +299,24 @@ class MonsterParser:
             except:
                 repo_url = "https://raw.githubusercontent.com/USER/REPO/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8"
 
-            now_str = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
             content = [
-                "🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ",
-                f"⚡ Последнее обновление: {now_str}",
+                "🚀 MONSTER ENGINE - STATIC SUBSCRIPTIONS",
                 "------------------------------------------",
                 ""
             ]
 
-            # Sort files by node count (descending)
-            sorted_files = sorted(files_stats.items(), key=lambda x: x[1], reverse=True)
-            for filename, count in sorted_files:
+            target_filenames = sorted(list(self.active_files))
+            for filename in target_filenames:
                 display_name = filename.replace(".txt", "").replace("_", " ").upper()
-                content.append(f"📍 {display_name} ({count} нод):")
+                content.append(f"📍 {display_name}:")
                 content.append(f"{repo_url}/{filename}")
                 content.append("")
 
             with open(LINKS_INFO_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(content))
+            logger.info("📄 Static LINKS_FOR_CLIENTS.txt generated.")
         except Exception as e:
-            logger.error(f"Failed to update client links file: {e}")
+            logger.error(f"Failed to create static client links file: {e}")
 
     async def run(self):
         """Main execution loop."""
@@ -359,9 +360,15 @@ class MonsterParser:
                 total_count = len(total_pool)
                 logger.info(f"📦 Total unique nodes discovered: {total_count}")
                 
+                # Ensure the client links file exists (static)
+                self.update_links_for_clients({})
+
                 if total_count == 0:
-                    # Update date even if no nodes
-                    self.update_links_for_clients({f: 0 for f in self.active_files})
+                    # Even if no nodes, we MUST touch all proxy files to update date
+                    for filename in self.active_files:
+                        path = os.path.join(OUTPUT_DIR, filename)
+                        with open(path, 'w', encoding='utf-8') as f: f.write('')
+                        os.utime(path, None)
                     return
 
                 # --- BATCHING ---
@@ -401,7 +408,7 @@ class MonsterParser:
             # --- FILE DISTRIBUTION & SYNC ---
             files_updated_stats = {}
             
-            # 1. Clean up old files like estonia.txt if they are not in COUNTRY_MAP
+            # 1. Clean up old files
             self.cleanup_obsolete_files()
             
             # 2. Update each active file
@@ -424,32 +431,27 @@ class MonsterParser:
                     if target == filename:
                         current_nodes[res['link']] = True
                 
-                # Limit size and prepare for writing
+                # Limit size
                 nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_FILE]
                 
-                # MANDATORY: Open and Write to ensure file exists and mtime updates
+                # MANDATORY: Always open and write, even if empty, to update mtime/date
                 try:
                     with open(path, 'w', encoding='utf-8') as f:
                         if nodes_to_save:
                             f.write('\n'.join(nodes_to_save) + '\n')
                         else:
-                            f.write('') # Keep file empty but "touched"
+                            # If file is empty, write nothing but the file is still "touched"
+                            f.write('')
                     
-                    # Force update timestamp even if content is same
+                    # Force update timestamp
                     os.utime(path, None)
                 except Exception as e:
                     logger.error(f"Failed to write/touch {filename}: {e}")
                     
                 files_updated_stats[filename] = len(nodes_to_save)
 
-            # 3. Update Client Links File
-            self.update_links_for_clients(files_updated_stats)
-
             # --- SOURCE FILE CLEANUP ---
-            # Remove direct configs that were found to be dead
-            # We preserve http subscriptions (as they are managed externally)
             final_sources = [e for e in raw_entries if e.startswith('http') or (e in total_pool and e not in dead_links)]
-            
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(final_sources) + '\n')
 
