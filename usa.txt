@@ -16,6 +16,7 @@ trojan://498e608a-7efa-4108-97f3-665c0f84f43b@us.binguo.link:10824?security=tls&
 trojan://498e608a-7efa-4108-97f3-665c0f84f43b@us.binguo.link:10825?security=tls&headerType=none&fp=chrome&type=tcp&sni=alibaba-node.cn
 trojan://498e608a-7efa-4108-97f3-665c0f84f43b@us.binguo.link:10826?security=tls&headerType=none&fp=chrome&type=tcp&sni=alibaba-node.cn
 trojan://4ed4ac41-4b56-42c4-b31c-4d7bc36f74ce@bnhju.dddct.us.ci:443?security=tls&sni=bnhju.dddct.us.ci&alpn=http/1.1&type=ws&host=bnhju.dddct.us.ci&path=/4e633j8uZI4BWzwNzcYz&allow_insecure=0
+trojan://5b4becce-5739-483f-97ec-68b81a855d68@naiu-us.05vr9nyqg5.download:13021?allowInsecure=0&sni=cloudflare.node-ssl.cdn-alibaba.com
 trojan://5e2ce79c-170e-484a-8802-40584a1a3a12@naiu-us.05vr9nyqg5.download:13020?security=tls&amp;sni=cloudflare.node-ssl.cdn-alibaba.com&amp;type=tcp&amp;headerType=none
 trojan://65f14831-5c67-483f-9e85-f3aa73f21187@naiu-us.05vr9nyqg5.download:13019?security=tls&amp;sni=cloudflare.node-ssl.cdn-alibaba.com&amp;type=tcp&amp;headerType=none
 trojan://6aa31a86-e2bd-4ede-b2be-095310b77ad5@microsoft-hk.85413.xyz:443?type=tcp&allowInsecure=1
@@ -267,7 +268,7 @@ vless://ad9ac4b3-a28d-4be2-a363-a59eea1bdeba@104.18.203.232:2052/?type=ws&encryp
 vless://ae0a43bc-6189-456e-9b8a-a93f39af336e@38.180.144.156:443?encryption=none&type=grpc&serviceName=4ad80c2f8c79fca2b989b494&security=reality&fp=chrome&pbk=76Cfr5qNl9BCrSb6jdkrgj0HbwfyCwj4oF6JJVhKD0s&sni=www.microsoft.com&sid=42d7234d875308a2
 vless://ae0a43bc-6189-456e-9b8a-a93f39af336e@38.180.144.156:8443?security=reality&encryption=none&pbk=76Cfr5qNl9BCrSb6jdkrgj0HbwfyCwj4oF6JJVhKD0s&headerType=none&fp=safari&type=tcp&flow=xtls-rprx-vision&sni=www.microsoft.com&sid=42d7234d875308a2
 vless://b39aca97-e9f2-4a94-b87f-8748299846cd@usa.denditop.site:443?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=usa.denditop.site&fp=chrome&security=reality&pbk=wgoLhL4pRP0y6fu6He4qW_ElohCM_ANWJF3HEoUhNz4&sid=9c2378562188c3cb
-vless://b5cdabf0-e048-4fa2-90da-9379b1a4926e@172.64.35.129:80/?type=ws&encryption=none&host=cc.ailicf.us.kg&path=🔒
+vless://b5cdabf0-e048-4fa2-90da-9379b1a4926e@172.64.35.129:80?type=ws&host=cc.ailicf.us.kg&path=%2Fb5cdabf0-e04
 vless://b8ce0288-e7c4-482a-be24-364f7d724585@104.21.4.8:8880?security=&type=ws&path=/?ed%3D2048&host=nl20.vlessx.us&encryption=none
 vless://b8ce0288-e7c4-482a-be24-364f7d724585@104.21.94.85:8880?security=&type=ws&path=/?ed%3D2048&host=nl20.vlessx.us&encryption=none
 vless://ba50e392-753a-4828-a7b8-d72ce226fa6a@104.21.74.191:2053/?type=ws&encryption=none&host=xcsa.ylks2024.us.kg&path=🔒
@@ -333,6 +334,6 @@ vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@86.38.214.20:8880/?type=ws&encrypti
 vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@91.193.58.149:8880/?type=ws&encryption=none&host=us.laoyoutiao.link&path=🔒
 vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@91.193.58.225:8880/?type=ws&encryption=none&host=us.laoyoutiao.link&path=🔒
 vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@91.193.58.79:8880/?type=ws&encryption=none&host=us.laoyoutiao.link&path=🔒
-vless://fc6395b9-8060-41b2-82f1-a55419093fe9@usa-join.outline-vpn.fun:443?mode=gun&security=reality&encryption=none&pbk=U79mwBYXYzaNs1L57EDyJNC5p8HSrQYx1GDnBdttgmw&fp=firefox&spx=%2Fvideos%2F&type=grpc&serviceName=Telegram%3A
+vless://fc6395b9-8060-41b2-82f1-a55419093fe9@usa-join.outline-vpn.fun:443?mode=gun&amp;security=reality&amp;encryption=none&amp;pbk=U79mwBYXYzaNs1L57EDyJNC5p8HSrQYx1GDnBdttgmw&amp;fp=firefox&amp;spx=%2Fvideos%2F&amp;type=grpc&amp;serviceName=Telegram:
 vless://ffeb4c30-99a9-4124-b32e-e64c65f38312@82.117.84.62:8080?encryption=none&flow=xtls-rprx-vision&type=raw&headerType=none&security=reality&fp=chrome&pbk=jRReXVS85X0Qm7jovHgNSOyz7BuS7p3iMPE4EfUHRlk&sni=isharing.us&sid=1ae2fd1e1ace9935
 vmess://eyJpZCI6ImNmMTNkNmVjLTAxZjAtNGI4YS1hYjczLTYxNmNlM2MxZTUxOSIsInBzIjoic3VzYW5vbyIsInBvcnQiOjQxMDIzLCJob3N0IjoiYWxpYmFiYS5pciIsInRscyI6IiIsIm5ldCI6InRjcCIsInBhdGgiOiJcLyIsImFpZCI6IjAiLCJ0eXBlIjoibm9uZSIsImFkZCI6IjEwMi5hbGlyZXphYWxhbm4ub25saW5lIn0=vmess://eyJpZCI6IjZiN2NiYzQxLWZiODAtNDFhOC04ZWI2LWI1YmRiMGU4NjE0NyIsImFpZCI6IjAiLCJhZGQiOiI1Ljc1LjI1NC4xNDIiLCJob3N0IjoiIiwidGxzIjoiIiwicGF0aCI6IlwvIiwibmV0IjoidGNwIiwicHMiOiJzdXNhbm9vIiwidHlwZSI6Im5vbmUiLCJwb3J0Ijo0NDN9vmess://eyJob3N0IjoiYWxpYmFiYS5pciIsInBvcnQiOjQxMDIzLCJ0eXBlIjoibm9uZSIsImlkIjoiY2YxM2Q2ZWMtMDFmMC00YjhhLWFiNzMtNjE2Y2UzYzFlNTE5IiwiYWlkIjoiMCIsImFkZCI6IjEwMi5hbGlyZXphYWxhbm4ub25saW5lIiwicGF0aCI6IlwvIiwicHMiOiJzdXNhbm9vIiwibmV0IjoidGNwIiwidGxzIjoiIn0=trojan://cd27884b-c5af-34ec-b75f-8248077818fe@b.mg.us.cat77.cloud:5215
