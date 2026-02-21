@@ -90,6 +90,7 @@ def check_ip_location(host):
             
             if resp.status_code == 429:
                 # Слишком много запросов — увеличиваем паузу
+                print(f"(!) API лимит (429) для {host}, ожидание {backoff}с...")
                 time.sleep(backoff)
                 backoff *= 2
                 continue
@@ -102,13 +103,13 @@ def check_ip_location(host):
                         IP_CACHE[host] = code
                         PROCESSED_COUNT += 1
                         if PROCESSED_COUNT % 10 == 0:
-                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Обработано {PROCESSED_COUNT} уникальных хостов...")
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] Проверено хостов: {PROCESSED_COUNT}...")
                     return code
                 elif data.get("message") == "reserved range":
-                    # Локальные или зарезервированные адреса не проверяем
                     break
                 break
-        except Exception:
+        except Exception as e:
+            print(f"(!) Ошибка запроса к API для {host}: {e}")
             time.sleep(2)
             
     # Если не удалось определить, сохраняем None
@@ -145,84 +146,81 @@ def sanitize_sources(file_path):
     
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(clean))
+    print(f"Загружено источников: {len(clean)}")
     return clean
 
 def git_commit_and_push():
     """Синхронизация обновленных файлов с репозиторием GitHub."""
     try:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Начинаю синхронизацию с Git...")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Подготовка к Git Push...")
         
-        # Настройка личности бота (для GitHub Actions)
+        # Настройка личности бота
         subprocess.run(["git", "config", "--global", "user.name", "Proxy-Parser-Bot"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "bot@proxy.local"], check=True)
         
         # Индексация всех текстовых файлов
         subprocess.run(["git", "add", "*.txt"], check=True)
         
-        # Проверка наличия изменений перед коммитом
+        # Проверка наличия реальных изменений в контенте
         status_check = subprocess.run(["git", "diff", "--cached", "--quiet"])
         if status_check.returncode == 0:
-            print("Изменений для фиксации не обнаружено.")
+            print(">>> Изменений в конфигах не найдено. Пропускаем Push.")
             return
 
-        commit_msg = f"Update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (IPs: {len(IP_CACHE)})"
+        commit_msg = f"Auto-Update: Saved {len(IP_CACHE)} nodes | {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
         
-        # Отправка в ветку по умолчанию
+        # Пытаемся сделать Pull перед Push, чтобы избежать конфликтов
+        subprocess.run(["git", "pull", "--rebase"], check=True)
+        
         push_res = subprocess.run(["git", "push"], capture_output=True, text=True)
         if push_res.returncode != 0:
-            print(f"Ошибка при выполнении Git Push: {push_res.stderr}")
+            print(f"(!) Ошибка Git Push: {push_res.stderr}")
         else:
-            print("Данные успешно отправлены в GitHub!")
+            print(">>> Данные успешно отправлены в GitHub репозиторий.")
             
     except Exception as e:
-        print(f"Критическая ошибка Git: {e}")
+        print(f"(!) Критическая ошибка Git: {e}")
 
 def process():
     """Основной цикл работы парсера."""
     start_time = datetime.now()
-    print(f"=== ЗАПУСК ПАРСЕРА: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ===")
+    print(f"\n--- СТАРТ ПРОВЕРКИ: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ---")
     
-    # Шаг 0: Предварительная проверка API
+    # Предварительная проверка API
     try:
-        test_api = requests.get("http://ip-api.com/json/1.1.1.1", timeout=10)
-        if test_api.status_code == 429:
-            print("ВНИМАНИЕ: API лимитирует запросы. Скрипт замедлится автоматически.")
-    except Exception:
-        print("ВНИМАНИЕ: GeoIP API недоступен или нестабилен.")
+        test_api = requests.get("http://ip-api.com/json/8.8.8.8", timeout=10)
+        print(f"Статус GeoIP API: {test_api.status_code}")
+    except Exception as e:
+        print(f"(!) Проблема с доступом к API: {e}")
 
-    # Шаг 1: Подготовка источников
     source_file = 'all_sources.txt'
     sources = sanitize_sources(source_file)
     if not sources:
-        print("Источники пусты. Добавьте ссылки в all_sources.txt.")
+        print("Список источников пуст.")
         return
 
-    # Шаг 2: Сбор сырых ссылок
     all_raw_links = []
-    print("Сканирование источников...")
+    print("Извлечение ссылок из источников...")
     for url in sources:
         if url.startswith("http"):
             try:
-                # Используем стандартный User-Agent для обхода базовых защит сайтов
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                resp = requests.get(url, timeout=25, headers=headers)
+                resp = requests.get(url, timeout=30, headers=headers)
                 if resp.status_code == 200:
                     content = resp.text
-                    # Если контент в base64 (часто для подписок)
                     if not any(p in content for p in PROTOCOLS):
                         content = decode_base64(content)
                     
                     found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', content)
                     all_raw_links.extend(found)
+                    print(f"  + {url}: {len(found)} прокси")
             except Exception as e:
-                print(f"Ошибка при загрузке {url}: {e}")
+                print(f"  - Ошибка {url}: {e}")
                 continue
         else:
-            # Если в файле уже прямая ссылка на прокси
             all_raw_links.append(url)
 
-    # Шаг 3: Техническая дедупликация (по хосту и порту)
     unique_configs = []
     seen_nodes = set()
     for cfg in all_raw_links:
@@ -234,52 +232,45 @@ def process():
             unique_configs.append(cfg)
 
     total_found = len(unique_configs)
-    print(f"Найдено уникальных кандидатов: {total_found}")
+    print(f"Итого уникальных прокси для проверки: {total_found}")
     if total_found == 0:
         return
 
-    # Шаг 4: Рандомизация очереди (чтобы API не видел запросов только по одной стране)
     random.shuffle(unique_configs)
-
-    # Шаг 5: Идентификация стран (Многопоточность)
     structured_data = {c: [] for c in COUNTRIES}
     mix_data = []
     
-    # Ограничиваем количество потоков для стабильности GeoIP API в Actions
-    MAX_THREADS = 4 
+    # Ограничиваем нагрузку на API
+    MAX_THREADS = 2 
     
     def thread_task(cfg):
         host, _ = get_server_info(cfg)
         country_code = check_ip_location(host)
         
         if country_code:
-            # Ищем соответствие кода из API нашему конфигу стран
             for country_key, info in COUNTRIES.items():
                 if country_code == info["code"] or country_code == info.get("alt_code"):
                     with CACHE_LOCK:
                         structured_data[country_key].append(cfg)
                     break
-        
         with CACHE_LOCK:
             mix_data.append(cfg)
 
-    print(f"Запуск определения локаций (потоков: {MAX_THREADS})...")
+    print(f"Начинаю определение стран (потоков: {MAX_THREADS})...")
     active_threads = []
     for cfg in unique_configs:
         t = threading.Thread(target=thread_task, args=(cfg,))
         active_threads.append(t)
         t.start()
         
-        # Контроль пачек потоков
         if len(active_threads) >= MAX_THREADS:
             for t in active_threads: t.join()
             active_threads = []
-            # Дополнительная пауза между пачками
-            time.sleep(1.5)
+            time.sleep(2) # Пауза для стабильности API
             
     for t in active_threads: t.join()
 
-    # Шаг 6: Сохранение результатов в файлы
+    # Сохранение результатов
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for country, configs in structured_data.items():
         with open(f"{country}.txt", 'w', encoding='utf-8') as f:
@@ -291,28 +282,24 @@ def process():
         f.write("\n".join(sorted(mix_data)))
         f.write(f"\n\n# Total: {len(mix_data)}\n# Updated: {now_str}")
 
-    # Финальный лог
     end_time = datetime.now()
     duration = end_time - start_time
     print("\n" + "="*50)
-    print(f"ИТОГОВЫЙ ОТЧЕТ ({now_str})")
-    print("="*50)
+    print(f"ОТЧЕТ ЗАВЕРШЕН ({now_str})")
+    print("-" * 50)
     for c, configs in structured_data.items():
         flag = COUNTRIES[c]['flag']
         print(f"{flag} {c.capitalize():<22}: {len(configs)} шт.")
     print("-" * 50)
-    print(f"ВСЕГО В MIX                   : {len(mix_data)}")
-    print(f"ОШИБОК ОПРЕДЕЛЕНИЯ            : {UNRESOLVED_COUNT}")
-    print(f"ВРЕМЯ ВЫПОЛНЕНИЯ              : {duration}")
+    print(f"ВСЕГО УНИКАЛЬНЫХ              : {len(mix_data)}")
+    print(f"НЕ ОТВЕТИЛИ (IP DOWN)         : {UNRESOLVED_COUNT}")
+    print(f"ВРЕМЯ РАБОТЫ                  : {duration}")
     print("="*50 + "\n")
 
-    # Шаг 7: Синхронизация с GitHub
     git_commit_and_push()
 
 if __name__ == "__main__":
     try:
         process()
-    except KeyboardInterrupt:
-        print("\nПроцесс прерван пользователем.")
     except Exception as e:
-        print(f"\nКритический сбой программы: {e}")
+        print(f"\n[КРИТИЧЕСКАЯ ОШИБКА]: {e}")
