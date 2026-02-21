@@ -151,7 +151,7 @@ class MonsterParser:
             logger.error(f"❌ GeoIP Init Error: {e}")
             # Если файл битый, лучше его удалить, чтобы Workflow перекачал его в следующий раз
             try:
-                if "valid MaxMind" in str(e):
+                if "valid MaxMind" in str(e) or "not a valid" in str(e).lower():
                     os.remove(GEOIP_DB)
                     logger.info("🗑️ Corrupted GeoIP file removed for re-download.")
             except: pass
