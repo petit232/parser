@@ -1,6 +1,6 @@
 🚀 MONSTER ENGINE SUBSCRIPTIONS
 ----------------------------------------
-Generated: 2026-02-21 20:35:58
+Generated: 2026-02-21 20:42:25
 
 📍 BELARUS:
 https://raw.githubusercontent.com/petit232/parser/main/proxy/belarus.txt
