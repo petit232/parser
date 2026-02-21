@@ -1,6 +1,7 @@
-🚀 MONSTER ENGINE SUBSCRIPTIONS
-----------------------------------------
-Generated: 2026-02-21 20:42:25
+🚀 MONSTER ENGINE - LIVE PROXY LINKS
+========================================
+Updated: 2026-02-21 20:44:36
+Note: These links are static and reliable.
 
 📍 BELARUS:
 https://raw.githubusercontent.com/petit232/parser/main/proxy/belarus.txt
@@ -13,6 +14,9 @@ https://raw.githubusercontent.com/petit232/parser/main/proxy/france.txt
 
 📍 GERMANY:
 https://raw.githubusercontent.com/petit232/parser/main/proxy/germany.txt
+
+📍 INVALID:
+https://raw.githubusercontent.com/petit232/parser/main/proxy/invalid.txt
 
 📍 KAZAKHSTAN:
 https://raw.githubusercontent.com/petit232/parser/main/proxy/kazakhstan.txt
