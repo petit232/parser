@@ -338,10 +338,7 @@ def git_commit_push():
         
         # ПРИНУДИТЕЛЬНЫЙ коммит. Мы убрали проверку "nothing to commit", так как время в файлах меняется всегда.
         msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M:%S')} | Mirror Sync Active"
-        commit_res = subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True)
-        
-        # Если изменений действительно нет (даже микросекунды не изменились), мы все равно пушим существующее
-        # Но при нашей логике с now_str изменения есть ВСЕГДА.
+        subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True)
         
         # Force push гарантирует, что GitHub будет точной копией того, что нагенерировал скрипт
         subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
