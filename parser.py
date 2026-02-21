@@ -66,12 +66,11 @@ class MonsterParser:
 
     def load_state(self):
         """Загрузка состояния с гарантированными полями по умолчанию"""
-        default_state = {"last_index": 0, "processed_total": 0, "history": []}
+        default_state = {"last_index": 0, "processed_total": 0, "dead_total": 0, "history": []}
         if os.path.exists(STATE_FILE):
             try:
                 with open(STATE_FILE, 'r') as f:
                     data = json.load(f)
-                    # Объединяем дефолт и загруженные данные, чтобы не было KeyError
                     return {**default_state, **data}
             except Exception as e:
                 logger.warning(f"Failed to load state, using defaults: {e}")
@@ -223,39 +222,62 @@ class MonsterParser:
                     else:
                         dead_links.add(link)
 
-            # 4. Обновление файлов по странам
+            # 4. Обновление файлов по странам (БЕЗОПАСНОЕ ОБНОВЛЕНИЕ)
+            files_updated_stats = {}
             for filename in set(COUNTRY_MAP.values()) | {DEFAULT_MIX}:
                 current_nodes = {}
+                # Читаем существующие ноды, исключая только те, что сейчас признаны мертвыми
                 if os.path.exists(filename):
                     with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
                             node = l.strip()
-                            if node and node not in dead_links: current_nodes[node] = True
+                            if node and node not in dead_links: 
+                                current_nodes[node] = True
                 
+                # Добавляем новые живые результаты из текущего батча
                 for res in results:
-                    if COUNTRY_MAP.get(res['country'], DEFAULT_MIX) == filename:
+                    target_file = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
+                    if target_file == filename:
                         current_nodes[res['link']] = True
                 
+                # Сохраняем результат (если в итоге файл не пустой или мы специально его чистим)
+                nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_COUNTRY]
                 with open(filename, 'w', encoding='utf-8') as f:
-                    f.write('\n'.join(list(current_nodes.keys())[:MAX_NODES_PER_COUNTRY]) + '\n')
+                    f.write('\n'.join(nodes_to_save) + '\n')
+                
+                files_updated_stats[filename] = len(nodes_to_save)
 
-            # 5. Глобальная чистка мастер-базы
+            # 5. Глобальная чистка мастер-базы (all_sources.txt)
             remaining_master = [l for l in links if l not in dead_links]
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(remaining_master) + '\n')
 
-            # Сохраняем прогресс (используем безопасную инкрементацию)
+            # Итоговая статистика
+            total_alive_in_files = sum(files_updated_stats.values())
+            
+            # Сохраняем прогресс
             self.state["last_index"] = end_idx if end_idx < total_count else 0
             self.state["processed_total"] = self.state.get("processed_total", 0) + len(current_batch)
+            self.state["dead_total"] = self.state.get("dead_total", 0) + len(dead_links)
             self.state["last_run_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.save_state()
             
-            logger.info(f"✅ Batch Completed. Live: {len(results)}, Removed: {len(dead_links)}")
+            # ГРАНДИОЗНЫЙ ОТЧЕТ В ЛОГИ
+            print("\n" + "="*50)
+            print(f"🚀 MONSTER ENGINE REPORT | {self.state['last_run_time']}")
+            print("="*50)
+            print(f"📂 Master Database:    {total_count} links")
+            print(f"📦 Batch Processed:   {len(current_batch)} links")
+            print(f"✅ Live in Batch:      {len(results)}")
+            print(f"💀 Dead (Removed):     {len(dead_links)}")
+            print(f"☠️  Total Dead Found:   {self.state['dead_total']}")
+            print("-"*50)
+            print(f"📈 Total Active Proxies across all files: {total_alive_in_files}")
+            print("="*50 + "\n")
 
         except Exception as e:
             logger.critical(f"FATAL ERROR: {e}", exc_info=True)
         finally:
-            # Всегда удаляем лок-файл при завершении
             if os.path.exists(LOCK_FILE):
                 try: os.remove(LOCK_FILE)
                 except: pass
