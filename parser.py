@@ -12,65 +12,65 @@ import sys
 import gc
 import socket
 from datetime import datetime, timedelta
-from collections import defaultdict
+from urllib.parse import urlparse, parse_qs, quote, unquote
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# --- КОНФИГУРАЦИЯ СТРАН ---
-# Карта стран: Код API -> Название файла.
+# --- КОНФИГУРАЦИЯ СТРАН (ФОРМАТ: 🏁 Страна 🏁) ---
 COUNTRIES = {
-    "belarus": {"flag": "🇧🇾", "code": "BY"},
-    "kazakhstan": {"flag": "🇰🇿", "code": "KZ"},
-    "germany": {"flag": "🇩🇪", "code": "DE"},
-    "poland": {"flag": "🇵🇱", "code": "PL"},
-    "usa": {"flag": "🇺🇸", "code": "US"},
-    "sweden": {"flag": "🇸🇪", "code": "SE"},
-    "netherlands": {"flag": "🇳🇱", "code": "NL"},
-    "latvia_lithuania": {"flag": "🇱🇻", "code": "LV", "alt_code": "LT"},
-    "russia": {"flag": "🇷🇺", "code": "RU"},
-    "singapore": {"flag": "🇸🇬", "code": "SG"},
-    "uk": {"flag": "🇬🇧", "code": "GB", "extra": "UK"},
-    "hongkong": {"flag": "🇭🇰", "code": "HK"},
-    "finland": {"flag": "🇫🇮", "code": "FI"},
-    "france": {"flag": "🇫🇷", "code": "FR"}
+    "belarus": {"flag": "🇧🇾", "code": "BY", "name": "Belarus"},
+    "kazakhstan": {"flag": "🇰🇿", "code": "KZ", "name": "Kazakhstan"},
+    "germany": {"flag": "🇩🇪", "code": "DE", "name": "Germany"},
+    "poland": {"flag": "🇵🇱", "code": "PL", "name": "Poland"},
+    "usa": {"flag": "🇺🇸", "code": "US", "name": "USA"},
+    "sweden": {"flag": "🇸🇪", "code": "SE", "name": "Sweden"},
+    "netherlands": {"flag": "🇳🇱", "code": "NL", "name": "Netherlands"},
+    "latvia_lithuania": {"flag": "🇱🇻", "code": "LV", "alt_code": "LT", "name": "Latvia/Lithuania"},
+    "russia": {"flag": "🇷🇺", "code": "RU", "name": "Russia"},
+    "singapore": {"flag": "🇸🇬", "code": "SG", "name": "Singapore"},
+    "uk": {"flag": "🇬🇧", "code": "GB", "extra": "UK", "name": "United Kingdom"},
+    "hongkong": {"flag": "🇭🇰", "code": "HK", "name": "Hong Kong"},
+    "finland": {"flag": "🇫🇮", "code": "FI", "name": "Finland"},
+    "france": {"flag": "🇫🇷", "code": "FR", "name": "France"}
 }
 
 # Поддерживаемые протоколы
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
-# Глобальное состояние и синхронизация
+# Глобальное состояние
 IP_CACHE = {} 
 CACHE_LOCK = threading.Lock()
 PROCESSED_COUNT = 0
 SHOULD_EXIT = False 
 
-# Настройки времени и лимитов
-MAX_AGE_HOURS = 48          # Срок хранения живого конфига
-BLACKLIST_BAIL_HOURS = 24   # Время блокировки мертвого узла
-MAX_BLACKLIST_SIZE = 3000   # Лимит записей в черном списке
-GEOIP_LIMIT_PER_RUN = 450   # Лимит новых GeoIP проверок за запуск
-THREAD_COUNT = 25           # Оптимальное количество потоков
+# Настройки производительности и лимитов (Максимально агрессивные)
+MAX_AGE_HOURS = 48          # Время жизни конфига (удаление старья)
+BLACKLIST_BAIL_HOURS = 24   # Время бана за мертвый порт
+MAX_BLACKLIST_SIZE = 30000  # Максимальное количество забаненных IP
+GEOIP_LIMIT_PER_RUN = 2000  # Лимит новых GeoIP проверок за цикл
+THREAD_COUNT = 75           # Количество потоков для проверки портов (ультра-скорость)
+GEOIP_PARALLEL_LEVEL = 5    # Сколько API опрашивать ОДНОВРЕМЕННО для одного IP
 
 def signal_handler(sig, frame):
-    """Корректное прерывание работы скрипта."""
+    """Корректный выход при прерывании."""
     global SHOULD_EXIT
-    print("\n[!] Сигнал остановки. Завершаем текущие операции...", flush=True)
+    print("\n[!] Остановка процесса пользователем...", flush=True)
     SHOULD_EXIT = True
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 def get_random_ua():
-    """Генерация случайного User-Agent для обхода защиты API."""
+    """Случайный User-Agent для мимикрии под браузер."""
     uas = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0"
     ]
     return random.choice(uas)
 
 def decode_base64(data):
-    """Безопасное декодирование Base64."""
+    """Безопасное декодирование Base64 с фиксом паддинга."""
     try:
         data = re.sub(r'[^a-zA-Z0-9+/=]', '', data)
         if not data: return ""
@@ -80,13 +80,13 @@ def decode_base64(data):
     except Exception: return ""
 
 def encode_base64(data):
-    """Кодирование строки в Base64."""
+    """Кодирование строки в чистый Base64."""
     try:
         return base64.b64encode(data.encode('utf-8')).decode('utf-8')
     except Exception: return ""
 
 def get_server_info(config):
-    """Извлечение хоста и порта из конфига."""
+    """Извлечение IP/Хоста и Порта из ссылки любого типа."""
     try:
         if config.startswith("vmess://"):
             decoded = decode_base64(config[8:])
@@ -99,119 +99,144 @@ def get_server_info(config):
     except Exception: pass
     return None, None
 
-def is_node_alive(host, port, timeout=4):
-    """Проверка доступности TCP порта."""
+def is_node_alive(host, port, timeout=1.2):
+    """Мгновенная проверка доступности TCP порта."""
     if not host or not port: return False
+    # Игнорируем локальные адреса
     if host.startswith(('127.', '192.168.', '10.', '172.16.')) or host == 'localhost':
         return False
     try:
         port_int = int(port)
         with socket.create_connection((host, port_int), timeout=timeout):
             return True
-    except (socket.timeout, socket.error, ValueError):
-        return False
+    except: return False
 
-def load_blacklist():
-    """Загрузка черного списка."""
-    blacklist = {}
-    if os.path.exists('blacklist.txt'):
-        try:
-            with open('blacklist.txt', 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if '|' in line:
-                        parts = line.split('|')
-                        if len(parts) >= 2:
-                            node, timestamp = parts[0], parts[1]
-                            blacklist[node] = datetime.fromisoformat(timestamp)
-        except Exception: pass
-    return blacklist
+# --- МОДУЛЬ ДИЗАЙНА (ФЛАГИ ПО БОКАМ) ---
 
-def save_blacklist(blacklist):
-    """Сохранение черного списка."""
-    now = datetime.now()
-    active = {n: ts for n, ts in blacklist.items() if now - ts < timedelta(hours=BLACKLIST_BAIL_HOURS)}
-    sorted_items = sorted(active.items(), key=lambda x: x[1], reverse=True)[:MAX_BLACKLIST_SIZE]
+def beautify_config(config, country_key):
+    """Применяет визуальное оформление: 🏁 Название Страны 🏁."""
     try:
-        with open('blacklist.txt', 'w', encoding='utf-8') as f:
-            for node, ts in sorted_items:
-                f.write(f"{node}|{ts.isoformat()}\n")
-    except Exception: pass
+        info = COUNTRIES.get(country_key)
+        if not info: return config
+        label = f"{info['flag']} {info['name']} {info['flag']}"
+        
+        if config.startswith("vmess://"):
+            decoded = decode_base64(config[8:])
+            if decoded:
+                data = json.loads(decoded)
+                data['ps'] = label
+                return "vmess://" + encode_base64(json.dumps(data))
+        elif "#" in config:
+            base, _ = config.split("#", 1)
+            return f"{base}#{quote(label)}"
+        else:
+            return f"{config}#{quote(label)}"
+    except Exception: return config
 
-# --- ПРОВАЙДЕРЫ GEOIP API ---
+# --- ТУРБО-ДВИЖОК GEOIP (10 ИСТОЧНИКОВ API) ---
 
-def api_ip_api_com(host):
+def api_01(host):
     try:
-        r = requests.get(f"http://ip-api.com/json/{host}?fields=status,countryCode", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"http://ip-api.com/json/{host}?fields=status,countryCode", timeout=2)
         if r.status_code == 200:
             d = r.json()
             if d.get("status") == "success": return d.get("countryCode")
     except: pass
     return None
 
-def api_ipwhois_io(host):
+def api_02(host):
     try:
-        r = requests.get(f"https://ipwho.is/{host}", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"https://ipwho.is/{host}", timeout=2)
         if r.status_code == 200:
             d = r.json()
             if d.get("success"): return d.get("country_code")
     except: pass
     return None
 
-def api_ip2c_org(host):
+def api_03(host):
     try:
-        r = requests.get(f"https://ip2c.org/{host}", timeout=7)
+        r = requests.get(f"https://ip2c.org/{host}", timeout=2)
         if r.status_code == 200 and r.text.startswith("1;"):
             p = r.text.split(';')
             if len(p) > 1: return p[1]
     except: pass
     return None
 
-def api_freeipapi_com(host):
+def api_04(host):
     try:
-        r = requests.get(f"https://freeipapi.com/api/json/{host}", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"https://freeipapi.com/api/json/{host}", timeout=2)
         if r.status_code == 200: return r.json().get("countryCode")
     except: pass
     return None
 
-def api_ipapi_co(host):
+def api_05(host):
     try:
-        r = requests.get(f"https://ipapi.co/{host}/json/", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"https://ipapi.co/{host}/json/", timeout=2, headers={'User-Agent': get_random_ua()})
         if r.status_code == 200: return r.json().get("country_code")
     except: pass
     return None
 
-def api_ip_json_com(host):
+def api_06(host):
     try:
-        r = requests.get(f"https://ip-json.com/json/{host}", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"https://ip-json.com/json/{host}", timeout=2)
         if r.status_code == 200: return r.json().get("country_code")
     except: pass
     return None
 
-def api_ipapi_is(host):
+def api_07(host):
     try:
-        r = requests.get(f"https://ipapi.is/json/{host}", timeout=7, headers={'User-Agent': get_random_ua()})
+        r = requests.get(f"https://ipapi.is/json/{host}", timeout=2)
         if r.status_code == 200: return r.json().get("location", {}).get("country_code")
     except: pass
     return None
 
+def api_08(host):
+    try:
+        r = requests.get(f"http://www.geoplugin.net/json.gp?ip={host}", timeout=2)
+        if r.status_code == 200: return r.json().get("geoplugin_countryCode")
+    except: pass
+    return None
+
+def api_09(host):
+    try:
+        r = requests.get(f"https://api.scamalytics.com/ip/{host}", timeout=2)
+        if r.status_code == 200: return r.json().get("country_code")
+    except: pass
+    return None
+
+def api_10(host):
+    try:
+        r = requests.get(f"https://extreme-ip-lookup.com/json/{host}?key=demo", timeout=2)
+        if r.status_code == 200: return r.json().get("countryCode")
+    except: pass
+    return None
+
 def check_ip_location_smart(host):
-    """Распределенная проверка GeoIP с автоматическим переключением."""
+    """Умное ПАРАЛЛЕЛЬНОЕ определение страны. Опрашивает 5 API одновременно."""
     global PROCESSED_COUNT
     if SHOULD_EXIT: return None
-
+    
     with CACHE_LOCK:
         if host in IP_CACHE: return IP_CACHE[host]
 
-    providers = [
-        api_ip_api_com, api_ipwhois_io, api_ip2c_org, 
-        api_freeipapi_com, api_ipapi_co, api_ip_json_com, api_ipapi_is
-    ]
-    
-    # Ротация: каждый хост пробует API в случайном порядке
+    providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
 
-    for provider in providers:
+    # Параллельный опрос пачки API
+    with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as api_executor:
+        future_to_api = {api_executor.submit(p, host): p for p in providers[:GEOIP_PARALLEL_LEVEL]}
+        for future in as_completed(future_to_api):
+            if SHOULD_EXIT: break
+            code = future.result()
+            if code and len(str(code)) == 2:
+                code = str(code).upper()
+                with CACHE_LOCK:
+                    IP_CACHE[host] = code
+                    PROCESSED_COUNT += 1
+                return code
+
+    # Фолбэк на оставшиеся API если первая пачка не дала результат
+    for provider in providers[GEOIP_PARALLEL_LEVEL:]:
         if SHOULD_EXIT: break
         code = provider(host)
         if code and len(str(code)) == 2:
@@ -219,236 +244,234 @@ def check_ip_location_smart(host):
             with CACHE_LOCK:
                 IP_CACHE[host] = code
                 PROCESSED_COUNT += 1
-                if PROCESSED_COUNT % 10 == 0:
-                    print(f"  [GeoIP] Найдено: {PROCESSED_COUNT} новых локаций.", flush=True)
             return code
-        # Если API не ответило, ждем немного перед следующим
-        time.sleep(random.uniform(1.0, 2.0))
 
-    with CACHE_LOCK:
-        IP_CACHE[host] = None
+    with CACHE_LOCK: IP_CACHE[host] = None
     return None
 
+# --- СИСТЕМА СОХРАНЕНИЯ И ЧИСТКИ ---
+
+def load_blacklist():
+    bl = {}
+    if os.path.exists('blacklist.txt'):
+        try:
+            with open('blacklist.txt', 'r', encoding='utf-8') as f:
+                for line in f:
+                    if '|' in line:
+                        p = line.strip().split('|')
+                        if len(p) >= 2: bl[p[0]] = datetime.fromisoformat(p[1])
+        except: pass
+    return bl
+
+def save_blacklist(bl):
+    now = datetime.now()
+    active = {n: ts for n, ts in bl.items() if now - ts < timedelta(hours=BLACKLIST_BAIL_HOURS)}
+    sorted_bl = sorted(active.items(), key=lambda x: x[1], reverse=True)[:MAX_BLACKLIST_SIZE]
+    try:
+        with open('blacklist.txt', 'w', encoding='utf-8') as f:
+            for node, ts in sorted_bl: f.write(f"{node}|{ts.isoformat()}\n")
+    except: pass
+
 def load_current_database():
-    """Загрузка существующей базы для исключения дублей."""
-    db = {} 
-    known_nodes = set() 
+    """Загрузка всей текущей базы узлов для предотвращения дублей."""
+    db, nodes = {}, set()
     files = [f"{c}.txt" for c in COUNTRIES] + ["mix.txt"]
     now = datetime.now()
-    
     for f_name in files:
         if os.path.exists(f_name):
             try:
                 with open(f_name, 'r', encoding='utf-8') as f:
                     content = f.read()
-                date_match = re.search(r'# Updated: ([\d\-\s:]+)', content)
-                file_dt = now
-                if date_match:
-                    try: file_dt = datetime.strptime(date_match.group(1), "%Y-%m-%d %H:%M:%S")
-                    except: pass
+                dm = re.search(r'# Updated: ([\d\-\s:]+)', content)
+                f_dt = datetime.strptime(dm.group(1), "%Y-%m-%d %H:%M:%S") if dm else now
                 for line in content.splitlines():
                     cfg = line.strip()
                     if cfg and not cfg.startswith('#'):
-                        db[cfg] = file_dt
+                        db[cfg] = f_dt
                         h, p = get_server_info(cfg)
-                        if h and p:
-                            known_nodes.add(f"{h}:{p}")
-            except Exception: pass
-    return db, known_nodes
+                        if h and p: nodes.add(f"{h}:{p}")
+            except: pass
+    return db, nodes
 
-def save_and_cleanup(structured_data):
-    """Сохранение результатов и очистка старых данных."""
+def save_and_organize(structured, failed_list):
+    """Сборка всех файлов, микса и подписки ошибок."""
     now = datetime.now()
     threshold = now - timedelta(hours=MAX_AGE_HOURS)
-    all_valid_configs = []
+    all_configs_to_mix = []
 
-    for country, info in COUNTRIES.items():
+    for country, configs in structured.items():
         file_name = f"{country}.txt"
-        current_file_configs = load_existing_configs_internal(file_name)
+        current_data = {}
+        # Загружаем старое из файла для слияния
+        if os.path.exists(file_name):
+            try:
+                with open(file_name, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        c = line.strip()
+                        if c and not c.startswith('#'): current_data[c] = now
+            except: pass
         
-        # Добавляем новые проверенные конфиги
-        for nc in structured_data.get(country, []):
-            current_file_configs[nc] = now
+        # Добавляем новые с оформлением
+        for nc in configs:
+            current_data[beautify_config(nc, country)] = now
             
-        # Удаляем просроченные
-        valid_list = [c for c, ts in current_file_configs.items() if ts > threshold]
-        all_valid_configs.extend(valid_list)
+        # Фильтруем по времени
+        valid = [c for c, ts in current_data.items() if ts > threshold]
+        all_configs_to_mix.extend(valid)
         
         try:
-            time.sleep(0.1)
             with open(file_name, 'w', encoding='utf-8') as f:
-                if valid_list:
-                    f.write("\n".join(sorted(list(set(valid_list)))))
-                f.write(f"\n\n# Total: {len(valid_list)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-        except Exception: pass
+                if valid: f.write("\n".join(sorted(list(set(valid)))))
+                f.write(f"\n\n# Total: {len(valid)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        except: pass
 
-    # Обновление общего файла mix.txt
-    unique_mix = list(set(all_valid_configs))
+    # Создание MIX
+    unique_mix = sorted(list(set(all_configs_to_mix)))
     try:
         with open("mix.txt", 'w', encoding='utf-8') as f:
-            if unique_mix:
-                f.write("\n".join(sorted(unique_mix)))
+            if unique_mix: f.write("\n".join(unique_mix))
             f.write(f"\n\n# Total: {len(unique_mix)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    except Exception: pass
-
-    # Создание подписки Base64
-    sub_payload = "\n".join(unique_mix)
-    encoded_payload = encode_base64(sub_payload)
-    try:
+        
+        # Основная подписка Monster
         with open("sub_monster.txt", 'w', encoding='utf-8') as f:
-            f.write(encoded_payload)
-        print(f"[Monster] Файл sub_monster.txt обновлен. Всего узлов: {len(unique_mix)}", flush=True)
-    except Exception: pass
+            f.write(encode_base64("\n".join(unique_mix)))
+            
+        # Подписка на ошибки (FAILED NODES)
+        with open("failed_nodes.txt", 'w', encoding='utf-8') as f:
+            if failed_list: f.write("\n".join(list(set(failed_list))))
+            f.write(f"\n\n# Failed Nodes Count: {len(failed_list)}\n# Log: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # Подписка на ошибки в Base64
+        with open("sub_failed.txt", 'w', encoding='utf-8') as f:
+            f.write(encode_base64("\n".join(list(set(failed_list)))))
+    except: pass
 
-def load_existing_configs_internal(file_name):
-    """Чтение существующих конфигов из файла."""
-    res = {}
-    if os.path.exists(file_name):
-        try:
-            with open(file_name, 'r', encoding='utf-8') as f:
-                content = f.read()
-            date_match = re.search(r'# Updated: ([\d\-\s:]+)', content)
-            file_date = datetime.now()
-            if date_match:
-                try: file_date = datetime.strptime(date_match.group(1), "%Y-%m-%d %H:%M:%S")
-                except: pass
-            for line in content.splitlines():
-                cfg = line.strip()
-                if cfg and not cfg.startswith('#'):
-                    res[cfg] = file_date
-        except Exception: pass
-    return res
-
-def git_commit_and_push():
-    """Автоматический пуш в репозиторий."""
-    print("\n[Git] Начало синхронизации...", flush=True)
+def git_commit_push():
+    """Автоматическая отправка в GitHub."""
+    print("\n[Git] Отправка обновлений в репозиторий...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
         subprocess.run(["git", "add", "*.txt"], check=True)
-        
-        status = subprocess.run(["git", "diff", "--cached", "--quiet"])
-        if status.returncode == 0:
-            print("[Git] Нет новых данных для коммита.", flush=True)
+        if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
+            print("[Git] Нет изменений для коммита.")
             return
-
-        msg = f"Update {datetime.now().strftime('%d.%m %H:%M')} | Verified & GeoFiltered"
+        msg = f"Ultra-Update {datetime.now().strftime('%d/%m %H:%M')} | Speed Mode"
         subprocess.run(["git", "commit", "-m", msg], check=True)
-        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
         subprocess.run(["git", "push", "origin", "main"], check=True)
-        print("[Git] Изменения успешно опубликованы.", flush=True)
     except Exception as e:
-        print(f"[Git] Ошибка синхронизации: {e}", flush=True)
+        print(f"[Git] Ошибка при пуше: {e}")
 
-def thread_check_worker(config, blacklist, db_knowledge, known_nodes, seen_lock, global_seen):
-    """Логика проверки отдельного узла."""
-    host, port = get_server_info(config)
-    if not host or not port: return None
-    
-    node_id = f"{host}:{port}"
-    
-    # 1. Проверка на дубликат (текстовый и сетевой)
-    if config in db_knowledge: return None
-    if node_id in known_nodes: return None
-    
-    # 2. Проверка черного списка
-    if node_id in blacklist: return None
-    
-    with seen_lock:
-        if node_id in global_seen: return None
-        global_seen.add(node_id)
+# --- ФУНКЦИИ ВОРКЕРЫ (ПОТОКИ) ---
 
-    # 3. Проверка порта
-    if is_node_alive(host, port):
+def check_worker(config, blacklist, db_now, known_nodes, lock, seen):
+    """Задача для проверки одного узла."""
+    h, p = get_server_info(config)
+    if not h or not p: return None
+    nid = f"{h}:{p}"
+    
+    # Отсеиваем дубли и забаненных сразу
+    if config in db_now or nid in known_nodes or nid in blacklist: return None
+    
+    with lock:
+        if nid in seen: return None
+        seen.add(nid)
+        
+    if is_node_alive(h, p):
         return config
     else:
-        # Узел мертв — вносим в черный список текущей сессии
-        return ("FAIL", node_id)
+        return ("FAIL", nid, config)
 
-def process():
-    """Основной цикл парсинга."""
-    start_run = datetime.now()
-    print(f"--- ЗАПУСК ПАРСЕРА MONSTER (MULTI-GEO MODE): {start_run.strftime('%H:%M:%S')} ---", flush=True)
+def process_monster_engine():
+    """Главный двигатель парсера."""
+    start_time = datetime.now()
+    print(f"--- MONSTER ENGINE ULTIMATE START: {start_time.strftime('%H:%M:%S')} ---", flush=True)
     
     if not os.path.exists('all_sources.txt'):
-        print("[!] Ошибка: Файл all_sources.txt отсутствует!", flush=True)
+        print("[!] Файл all_sources.txt не найден!")
         return
 
     with open('all_sources.txt', 'r', encoding='utf-8') as f:
         sources = list(set([l.strip() for l in f if l.strip()]))
 
     blacklist = load_blacklist()
-    db_knowledge, known_nodes = load_current_database()
-    
+    db_now, known_nodes = load_current_database()
     raw_configs = []
-    print(f"Этап 1: Сбор данных из {len(sources)} источников...", flush=True)
     
+    # 1. Сбор ссылок со всех источников
+    print(f"Сбор данных из {len(sources)} источников...", flush=True)
     for url in sources:
         if SHOULD_EXIT: break
         try:
-            if "sub_monster.txt" in url or "mix.txt" in url: continue
-            
-            r = requests.get(url, timeout=25, headers={'User-Agent': get_random_ua()})
-            r.raise_for_status()
+            # Не парсим свои же файлы
+            if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
+                continue
+            r = requests.get(url, timeout=12, headers={'User-Agent': get_random_ua()})
             text = r.text
-            
+            # Авто-декодирование если источник в base64
             if not any(p in text for p in PROTOCOLS):
                 decoded = decode_base64(text)
                 if decoded: text = decoded
-                
-            matches = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', text)
-            raw_configs.extend(matches)
-            print(f"  + {url[:30]}... : Найдено {len(matches)} узлов", flush=True)
+            
+            # Извлекаем все подходящие ссылки
+            found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', text)
+            raw_configs.extend(found)
             gc.collect()
-        except Exception as e:
-            print(f"  [!] Пропуск источника {url[:30]}: {e}", flush=True)
+        except:
+            print(f"[-] Пропуск битого источника: {url}")
 
-    print(f"\nЭтап 2: Проверка доступности портов (Threads: {THREAD_COUNT})...", flush=True)
-    valid_new_configs = []
+    # 2. Массовая проверка портов (Multi-threading)
+    valid_new = []
+    failed_new = []
     global_seen = set()
     seen_lock = threading.Lock()
     
+    print(f"Проверка {len(raw_configs)} узлов на порт в {THREAD_COUNT} потоков...", flush=True)
     with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
-        futures = [executor.submit(thread_check_worker, c, blacklist, db_knowledge, known_nodes, seen_lock, global_seen) for c in raw_configs]
+        futures = [executor.submit(check_worker, c, blacklist, db_now, known_nodes, seen_lock, global_seen) for c in raw_configs]
         for future in as_completed(futures):
             if SHOULD_EXIT: break
-            result = future.result()
-            if result:
-                if isinstance(result, tuple) and result[0] == "FAIL":
-                    blacklist[result[1]] = datetime.now()
+            res = future.result()
+            if res:
+                if isinstance(res, tuple): # Это фейл
+                    blacklist[res[1]] = datetime.now()
+                    failed_new.append(res[2])
                 else:
-                    valid_new_configs.append(result)
+                    valid_new.append(res)
 
-    # Ограничиваем количество GeoIP проверок за раз, чтобы не ловить баны
-    random.shuffle(valid_new_configs)
-    queue = valid_new_configs[:GEOIP_LIMIT_PER_RUN]
+    # 3. GeoIP Распределение (Turbo)
+    random.shuffle(valid_new)
+    # Берем пачку самых свежих
+    queue = valid_new[:GEOIP_LIMIT_PER_RUN]
+    structured_data = {c: [] for c in COUNTRIES}
     
-    structured = {c: [] for c in COUNTRIES}
-    print(f"\nЭтап 3: Распределенное определение стран для {len(queue)} живых узлов...", flush=True)
-    
+    print(f"Параллельный GeoIP (x{GEOIP_PARALLEL_LEVEL}) для {len(queue)} узлов...", flush=True)
     for cfg in queue:
         if SHOULD_EXIT: break
         host, _ = get_server_info(cfg)
         code = check_ip_location_smart(host)
-        
         if code:
             matched = False
             for c_name, c_info in COUNTRIES.items():
-                if code == c_info["code"] or code == c_info.get("alt_code") or code == c_info.get("extra"):
-                    structured[c_name].append(cfg)
+                if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
+                    structured_data[c_name].append(cfg)
                     matched = True
                     break
-    
-    print("\nЭтап 4: Финализация файлов и очистка памяти...", flush=True)
-    save_and_cleanup(structured)
+            if not matched: failed_new.append(cfg) # Страна не в нашем списке
+        else:
+            failed_new.append(cfg) # Вообще не определился
+            
+    # 4. Сохранение результатов и пуш
+    save_and_organize(structured_data, failed_new)
     save_blacklist(blacklist)
-    git_commit_and_push()
+    git_commit_push()
     
-    print(f"--- ПАРСИНГ ЗАВЕРШЕН. ВРЕМЯ РАБОТЫ: {datetime.now() - start_run} ---", flush=True)
+    end_time = datetime.now()
+    print(f"--- ЦИКЛ ЗАВЕРШЕН ЗА {end_time - start_time} ---", flush=True)
 
 if __name__ == "__main__":
     try:
-        process()
-    except Exception as e:
-        print(f"КРИТИЧЕСКИЙ СБОЙ ПРИЛОЖЕНИЯ: {e}", flush=True)
+        process_monster_engine()
+    except Exception as fatal_error:
+        print(f"\n[КРИТИЧЕСКАЯ ОШИБКА]: {fatal_error}")
         sys.exit(1)
