@@ -6,4 +6,4 @@ vless://6202b230-417c-4d8e-b624-0f71afa9c75d@194.59.5.238:2096?path=/?telegram%F
 vless://71692331-5685-4a99-9798-38415877f33d@kz-5.vpnd.io:13344?type=tcp&security=reality&encryption=none&pbk=DC71RjKr16drr8gqK8QhEuCVLpkbBfUfPb9Far8Jkzo&fp=random&sni=yahoo.com&sid=e2bd9802e29deb&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B0%F0%9F%87%BF%20Kazakhstan%20%7C%20KZ%20%F0%9F%87%B0%F0%9F%87%BF%20%E2%9D%A4%EF%B8%8F
 
 # Total Active: 6
-# Updated: 2026-02-21 12:09:36
+# Updated: 2026-02-21 12:12:27
