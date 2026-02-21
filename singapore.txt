@@ -29,6 +29,7 @@ vless://06e4425e-a8cb-4b63-929f-2105604ab0a9@212.183.88.109:443/?type=ws&encrypt
 vless://06e4425e-a8cb-4b63-929f-2105604ab0a9@212.183.88.24:443/?type=ws&encryption=none&host=in.youlingkais.filegear-sg.me&path=🔒
 vless://06e4425e-a8cb-4b63-929f-2105604ab0a9@www.pcmag.com:443/?type=ws&encryption=none&host=in.youlingkais.filegear-sg.me&path=🔒
 vless://07a3df8f-2a2c-42f8-ad92-65889d90f3bf@104.21.25.95:443/?type=ws&encryption=none&host=rrrfgt6.890604.filegear-sg.me&path=🔒
+vless://0ca855d9-7c03-40eb-929b-919f934abdc3@saas.sin.fan:443?encryption=none&security=tls&sni=amirvpn.amirhm00100.workers.dev&fp=chrome&type=ws&host=amirvpn.amirhm00100.workers.dev&path=/?ed=2048
 vless://0cae82c9-d966-4297-a5b0-d8b7a8de1378@13.212.74.181:15416?security=reality&type=tcp&sni=www.lamer.com.sg&fp=chrome&flow=xtls-rprx-vision&sid=bd997a55&pbk=H0oYX4GJe45zWXvrPdMzSKhmmrd2aqKFEk1Z2Dy9SBM
 vless://0cae82c9-d966-4297-a5b0-d8b7a8de1378@13.229.128.140:15416?security=reality&type=tcp&sni=www.lamer.com.sg&fp=chrome&flow=xtls-rprx-vision&sid=bd997a55&pbk=H0oYX4GJe45zWXvrPdMzSKhmmrd2aqKFEk1Z2Dy9SBM
 vless://128fde49-c4d6-41e0-9176-156bf62527eb@ns2.cloudflare.com:443/?type=ws&encryption=none&host=rayan-fg-6.parvin.filegear-sg.me&path=🔒
