@@ -1,14 +1,1 @@
-https://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt?token=GHSAT0AAAAAADSZ4KURMOPVQ7MNSMCIVFKU2MZRHRQ
-https://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt?token=GHSAT0AAAAAADSZ4KUQXDZ46GF6T64KCHNA2MZN6YA
-https://raw.githubusercontent.com/petit232/parser/refs/heads/main/germany.txt?token=GHSAT0AAAAAADSZ4KUQXRQK3TCRX6BC76GG2MZNT6Q
-https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/LT.txt
-https://raw.githubusercontent.com/Danialsamadi/v2go/main/Splitted-By-Country/BY.txt
-https://193.47.42.109:2096/sub/xe1bbegxhh7h9ah4
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-all.txt
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/WHITE-CIDR-RU-checked.txt
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_SS%2BAll_RUS.txt
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS_mobile.txt
-https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
-https://raw.githubusercontent.com/ShatakVPN/ConfigForge-V2Ray/refs/heads/main/configs/br/vless.txt
-https://vpnd.io/subscription/vless/16b54f1014e6895619ccf4017570599e0cde7df882ee2d86b348f587e7d9e12a
+
