@@ -2,7 +2,7 @@ name: ⚡ Monster Engine Auto-Sync
 
 on:
   schedule:
-    - cron: '*/20 * * * *' # Каждые 20 минут
+    - cron: '0 * * * *' # Каждые 20 минут
   push:
     paths:
       - 'all_sources.txt'
