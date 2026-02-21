@@ -6,8 +6,8 @@ on:
       - 'all_sources.txt'
       - 'parser.py'
   schedule:
-    - cron: '0 */6 * * *'
-  workflow_dispatch:
+    - cron: '0 */6 * * *' # Авто-запуск каждые 6 часов
+  workflow_dispatch: # Кнопка для ручного запуска
 
 jobs:
   build:
@@ -18,21 +18,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Python Setup
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install
+      - name: Install dependencies
         run: pip install requests
 
       - name: Run Monster Script
         run: python parser.py
 
-      - name: Save Changes
+      - name: Commit and Push changes
         run: |
           git config --local user.email "bot@github.com"
           git config --local user.name "VPN-Monster-Bot"
           git add *.txt
-          git commit -m "Auto-Update: $(date)" || echo "No changes"
+          git commit -m "Auto-Update: $(date)" || echo "No changes to commit"
           git push
