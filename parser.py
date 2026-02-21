@@ -112,16 +112,15 @@ def check_ip_location(host):
     for attempt in range(3): 
         if SHOULD_EXIT: break
         try:
-            # БЕЗОПАСНАЯ ЗАДЕРЖКА: ~1.5 секунды между запросами для соблюдения лимита 45/мин.
-            # Это защищает от автоматического бана на стороне сервера ip-api.
-            time.sleep(random.uniform(1.45, 1.65))
+            # БЕЗОПАСНАЯ ЗАДЕРЖКА: ~1.4 секунды между запросами для соблюдения лимита 45/мин.
+            time.sleep(1.4)
             
-            resp = requests.get(url, timeout=12)
+            resp = requests.get(url, timeout=15)
             
             if resp.status_code == 429:
                 # Если всё же поймали 429, ждем дольше
-                print(f"(!) Превышен лимит (429). Ждем 60 секунд для сброса счетчика...")
-                time.sleep(60)
+                print(f"(!) Превышен лимит (429). Ждем 65 секунд для сброса счетчика...")
+                time.sleep(65)
                 continue
                 
             if resp.status_code == 200:
@@ -135,11 +134,12 @@ def check_ip_location(host):
                             print(f"[{datetime.now().strftime('%H:%M:%S')}] GeoIP Прогресс: {PROCESSED_COUNT} узлов проверено.")
                     return code
                 else:
-                    # IP не определен или зарезервирован
+                    # IP не определен или зарезервирован (не повторяем попытку)
                     break
             else:
                 time.sleep(2)
-        except Exception:
+        except (requests.exceptions.RequestException, Exception) as e:
+            print(f"  ! Ошибка сети при проверке IP {host}: {e}")
             time.sleep(2)
             
     with CACHE_LOCK:
@@ -163,8 +163,12 @@ def sanitize_sources(file_path):
         with open(file_path, 'w', encoding='utf-8') as f: pass
         return []
         
-    with open(file_path, 'r', encoding='utf-8') as f:
-        lines = f.read().splitlines()
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.read().splitlines()
+    except Exception as e:
+        print(f"Ошибка при чтении источников: {e}")
+        return []
         
     clean, seen = [], set()
     for line in lines:
@@ -184,25 +188,35 @@ def save_results(structured_data, mix_data):
     
     for country, configs in structured_data.items():
         file_name = f"{country}.txt"
-        with open(file_name, 'w', encoding='utf-8') as f:
-            if configs:
-                f.write("\n".join(sorted(list(set(configs)))))
-            f.write(f"\n\n# Total: {len(configs)}\n# Updated: {now_str}")
+        try:
+            with open(file_name, 'w', encoding='utf-8') as f:
+                if configs:
+                    f.write("\n".join(sorted(list(set(configs)))))
+                f.write(f"\n\n# Total: {len(configs)}\n# Updated: {now_str}")
+        except Exception as e:
+            print(f"Ошибка при сохранении файла {file_name}: {e}")
 
-    with open("mix.txt", 'w', encoding='utf-8') as f:
-        if mix_data:
-            f.write("\n".join(sorted(list(set(mix_data)))))
-        f.write(f"\n\n# Total: {len(mix_data)}\n# Updated: {now_str}")
+    try:
+        with open("mix.txt", 'w', encoding='utf-8') as f:
+            if mix_data:
+                f.write("\n".join(sorted(list(set(mix_data)))))
+            f.write(f"\n\n# Total: {len(mix_data)}\n# Updated: {now_str}")
+    except Exception as e:
+        print(f"Ошибка при сохранении mix.txt: {e}")
     
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Все файлы (.txt) успешно обновлены.")
 
 def git_commit_and_push():
     """Синхронизирует изменения с GitHub."""
     try:
+        # Настройка пользователя Git (исправлены кавычки)
         subprocess.run(["git", "config", "--global", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "bot@vpn-monster.com"], check=True)
+        
+        # Добавляем файлы
         subprocess.run(["git", "add", "*.txt"], check=True)
         
+        # Проверяем наличие изменений (diff)
         status = subprocess.run(["git", "diff", "--cached", "--quiet"])
         if status.returncode == 0:
             print("Нет новых данных для коммита.")
@@ -210,16 +224,21 @@ def git_commit_and_push():
 
         commit_msg = f"Auto-Update: {datetime.now().strftime('%Y-%m-%d %H:%M')} | IP-Checks: {len(IP_CACHE)}"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
-        subprocess.run(["git", "pull", "--rebase"], check=True)
         
-        res = subprocess.run(["git", "push"], capture_output=True, text=True)
+        # Rebase для предотвращения конфликтов
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
+        
+        # Пушим
+        res = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
         if res.returncode != 0:
             print(f"Ошибка Git Push: {res.stderr}")
         else:
-            print(">>> Репозиторий GitHub обновлен.")
+            print(">>> Репозиторий GitHub успешно обновлен.")
             
+    except subprocess.CalledProcessError as e:
+        print(f"Ошибка выполнения команды Git: {e}")
     except Exception as e:
-        print(f"Ошибка Git: {e}")
+        print(f"Общая ошибка Git: {e}")
 
 def process():
     """Главный цикл работы парсера."""
@@ -229,6 +248,7 @@ def process():
     source_file = 'all_sources.txt'
     sources = sanitize_sources(source_file)
     if not sources:
+        print("Список источников пуст. Завершение.")
         return
 
     proto_groups = defaultdict(list)
@@ -240,25 +260,30 @@ def process():
         
         if url.startswith("http"):
             try:
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
                 with requests.get(url, timeout=30, headers=headers, stream=True) as r:
                     r.raise_for_status()
                     chunks = []
                     downloaded = 0
+                    # Читаем чанками для экономии памяти
                     for chunk in r.iter_content(chunk_size=1024*1024, decode_unicode=True):
                         if chunk:
                             chunks.append(chunk)
                             downloaded += len(chunk)
-                        if downloaded > 10 * 1024 * 1024: break
+                        if downloaded > 15 * 1024 * 1024: # Лимит 15МБ
+                            print(f"  ! Источник {url[:40]}... слишком большой, обрезано.")
+                            break
                     
                     content = "".join(chunks)
                     del chunks 
                     
+                    # Декодирование, если это подписка Base64
                     if not any(p in content for p in PROTOCOLS):
                         decoded = decode_base64(content)
                         if decoded: content = decoded
                     
                     found_count = 0
+                    # Поиск по регулярному выражению
                     for m in re.finditer(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', content):
                         cfg = m.group(0)
                         host, port = get_server_info(cfg)
@@ -275,9 +300,11 @@ def process():
                     print(f"  + {url[:50]}... : +{found_count} узлов")
                     del content
                     gc.collect() 
-            except Exception:
+            except Exception as e:
+                print(f"  - Ошибка при парсинге {url[:40]}: {e}")
                 continue
         else:
+            # Если в источнике прямая ссылка
             host, port = get_server_info(url)
             if host and port:
                 node_id = f"{host}:{port}"
@@ -290,7 +317,7 @@ def process():
 
     total_unique = len(seen_nodes)
     if total_unique == 0:
-        print("Ничего не найдено.")
+        print("Ничего не найдено. Проверка завершена.")
         return
 
     print("\nРаспределение по протоколам:")
@@ -299,9 +326,13 @@ def process():
 
     # Формирование очереди (Round Robin)
     process_list = []
-    limit = 350
-    for p in proto_groups: random.shuffle(proto_groups[p])
+    limit = 400 # Увеличил лимит до 400
     
+    # Перемешиваем для честного распределения
+    for p in proto_groups: 
+        random.shuffle(proto_groups[p])
+    
+    # Собираем список по очереди из каждого протокола
     while len(process_list) < limit and any(proto_groups.values()):
         for p in list(proto_groups.keys()):
             if proto_groups[p]:
@@ -329,10 +360,13 @@ def process():
                     matched = True
                     break
         
+        # Добавляем в микс все проверенные (даже те, чья страна не в списке целевых)
         mix_data.append(cfg)
 
-    # Сохранение
+    # Сохранение результатов в файлы
     save_results(structured_data, mix_data)
+    
+    # Финальная синхронизация с GitHub
     git_commit_and_push()
     
     end_time = datetime.now()
@@ -342,6 +376,10 @@ if __name__ == "__main__":
     try:
         process()
     except Exception as e:
-        print(f"\n[ОШИБКА]: {e}")
-        git_commit_and_push()
+        print(f"\n[КРИТИЧЕСКИЙ СБОЙ]: {e}")
+        # Пробуем сохранить то, что успели обработать
+        try:
+            git_commit_and_push()
+        except:
+            pass
         sys.exit(1)
