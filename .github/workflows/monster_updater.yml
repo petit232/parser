@@ -1,7 +1,7 @@
 name: VPN Monster Auto-Update Ultimate
 
 on:
-  # 1. МГНОВЕННОЕ ОБНОВЛЕНИЕ: срабатывает при любом изменении ссылок или логики парсера
+  # 1. МГНОВЕННОЕ ОБНОВЛЕНИЕ: срабатывает при любом изменении базы
   push:
     branches:
       - main
@@ -9,11 +9,11 @@ on:
       - 'all_sources.txt'
       - 'parser.py'
       - '.github/workflows/monster_updater.yml'
-  
-  # 2. АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ: запуск каждые 6 часов (стандарт для поддержания актуальности)
+
+  # 2. АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ: запуск КАЖДЫЙ ЧАС (1 раз в час)
   schedule:
-    - cron: '0 */6 * * *'
-  
+    - cron: '0 * * * *'
+
   # 3. РУЧНОЙ ЗАПУСК: добавляет кнопку "Run workflow" во вкладке Actions
   workflow_dispatch:
 
@@ -41,37 +41,34 @@ jobs:
           python-version: '3.10'
           cache: 'pip' # Кэширование зависимостей для ускорения запусков
 
-      # Шаг 3: Установка зависимостей с проверкой обновлений
+      # Шаг 3: Установка зависимостей
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests
 
-      # Шаг 4: Запуск основного движка парсера
-      # Мы добавляем удаление кэша перед запуском (если он вдруг мешает в системе)
+      # Шаг 4: Запуск основного движка (одиночный цикл для GitHub)
       - name: Run Monster Parser Engine
         run: |
-          # Принудительно удаляем временные файлы если они есть
           rm -f failed_nodes.txt.tmp 2>/dev/null
           python parser.py
         env:
-          PYTHONUNBUFFERED: "1" # Чтобы логи отображались в реальном времени
+          PYTHONUNBUFFERED: "1" # Логи отображаются в реальном времени
+          GITHUB_ACTIONS: "true" # Флаг для скрипта, что он в CI/CD
 
       # Шаг 5: Финальная синхронизация (Fallback Sync)
-      # Если скрипт отработал, но не смог запушить, этот шаг гарантирует сохранность данных
       - name: Final Git Sync and Push
         run: |
           git config --local user.email "bot@vpn-monster.com"
           git config --local user.name "VPN-Monster-Bot"
           
-          # Убеждаемся, что мы на актуальной ветке и сбросили индекс
+          # Убеждаемся, что мы на актуальной ветке
           git fetch origin main
           git checkout main
           
-          # Добавляем все текстовые файлы. Используем -f чтобы точно подцепить всё
-          git add *.txt
+          # Добавляем все текстовые файлы и JSON состояние
+          git add *.txt *.json
           
-          # Если скрипт parser.py не сделал коммит, делаем его здесь
           if ! git diff --cached --quiet; then
             echo "Обнаружены изменения в файлах подписок. Фиксируем..."
             git commit -m "Ultra-Sync: $(date +'%Y-%m-%d %H:%M:%S') [Automated Update]"
@@ -97,6 +94,4 @@ jobs:
             fi
           else
             echo "Git не обнаружил изменений в контенте .txt файлов."
-            # Создаем пустой коммит раз в сутки, чтобы "оживить" GitHub Actions если нужно
-            # Но здесь просто выходим, чтобы не спамить.
           fi
