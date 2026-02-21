@@ -1,1 +1,38 @@
+name: VPN Monster Auto-Update
 
+on:
+  push:
+    paths:
+      - 'all_sources.txt'  # Следим только за этим файлом
+      - 'parser.py'
+  schedule:
+    - cron: '0 */6 * * *'  # Каждые 6 часов для профилактики
+  workflow_dispatch:      # Кнопка ручного запуска
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install
+        run: pip install requests
+
+      - name: Run Monster Script
+        run: python parser.py
+
+      - name: Save Changes
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "VPN-Monster-Bot"
+          git add *.txt
+          git commit -m "Monster Update: $(date)" || echo "No changes"
+          git push
