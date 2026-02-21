@@ -3,7 +3,7 @@ import re
 import requests
 import base64
 
-# --- ОБЪЕДИНЕННЫЙ СЛОВАРЬ МАРКЕРОВ (Флаги, Города, Аэропорты, Домены) ---
+# --- ПОЛНЫЙ СПРАВОЧНИК МАРКЕРОВ (Флаги, Города, Аэропорты, Домены) ---
 COUNTRIES = {
     "belarus": {"keys": ["🇧🇾", "by", "belarus", "беларусь", "минск", "minsk", "msq", "by.adr-cloud.ru", "by.cdn.titun.su"], "flag": "🇧🇾"},
     "kazakhstan": {"keys": ["🇰🇿", "kazakhstan", "казахстан", "алматы", "астана", "astana", "almaty", "ala", "tse", "kz.adrenaline-fast.ru", "kz1.sky-vault.top", "pavlodar"], "flag": "🇰🇿"},
@@ -32,35 +32,44 @@ def decode_base64(data):
     except: return data
 
 def get_unique_id(config):
-    # Извлекаем хост и порт для проверки уникальности
+    # Извлечение IP и PORT для удаления дубликатов
     match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
     return match.group(2) if match else config
 
 def process():
     all_raw_links = []
     source_file = 'all_sources.txt'
-    if not os.path.exists(source_file): return
+    
+    if not os.path.exists(source_file):
+        print("ОШИБКА: Файл all_sources.txt не найден!")
+        return
 
     with open(source_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
+    # Сбор и парсинг всех данных
     for line in lines:
         line = line.strip()
         if not line: continue
         
-        # Если это ссылка на подписку
+        # Если это HTTP ссылка на подписку
         if line.startswith("http") and not any(p in line for p in PROTOCOLS):
             try:
-                resp = requests.get(line, timeout=15)
+                resp = requests.get(line, timeout=20)
                 content = decode_base64(resp.text)
-                # Вытаскиваем все конфиги из скачанного контента
                 for sub_line in content.splitlines():
                     if any(proto in sub_line for proto in PROTOCOLS):
                         all_raw_links.append(sub_line.strip())
-            except: print(f"Ошибка загрузки: {line}")
-        # Если это прямая ссылка (или текст с ссылками)
+            except: print(f"Пропуск URL (ошибка): {line}")
+        
+        # Если это прямая ссылка или скопированный текст с кодом
         elif any(proto in line for proto in PROTOCOLS):
-            all_raw_links.append(line)
+            # Извлекаем все вхождения протоколов из строки (на случай если в строке несколько кодов)
+            found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s,]+', line)
+            if found:
+                all_raw_links.extend(found)
+            else:
+                all_raw_links.append(line)
 
     structured_data = {country: set() for country in COUNTRIES}
     mix_data = set()
@@ -70,30 +79,30 @@ def process():
         config = config.strip()
         uid = get_unique_id(config)
         
-        # Удаление повторов (и в сырых, и в готовых)
+        # Глобальная очистка повторов
         if uid in unique_check: continue
         unique_check.add(uid)
 
         config_lower = config.lower()
         assigned = False
         
-        # 1. Приоритет флагам
+        # 1. Сначала ищем по флагам (самый точный метод)
         for country, info in COUNTRIES.items():
             if info["flag"] in config:
                 structured_data[country].add(config)
                 assigned = True
                 break
         
-        # 2. Поиск по ключам
+        # 2. Поиск по ключам (города, аэропорты, домены)
         if not assigned:
             for country, info in COUNTRIES.items():
                 for key in info["keys"]:
-                    if len(key) <= 3:
-                        if re.search(r'[^a-z0-9]' + re.escape(key) + r'[^a-z0-9]', f" {config_lower} "):
+                    if len(key) <= 3: # Короткие ключи (us, de, by) ищем как отдельные слова
+                        if re.search(r'[^a-z0-9]' + re.escape(key.lower()) + r'[^a-z0-9]', f" {config_lower} "):
                             structured_data[country].add(config)
                             assigned = True
                             break
-                    elif key in config_lower:
+                    elif key.lower() in config_lower:
                         structured_data[country].add(config)
                         assigned = True
                         break
@@ -101,19 +110,23 @@ def process():
 
         mix_data.add(config)
 
-    # Удаляем старье и сохраняем
-    for f in os.listdir('.'):
-        if f.endswith('.txt') and f not in ['all_sources.txt', 'requirements.txt']:
-            os.remove(f)
-
+    # ОБНОВЛЕНИЕ ФАЙЛОВ (Перезапись внутри существующих имен)
     for country, configs in structured_data.items():
-        if configs:
-            with open(f"{country}.txt", 'w', encoding='utf-8') as f:
-                f.write("\n".join(configs))
+        filename = f"{country}.txt"
+        with open(filename, 'w', encoding='utf-8') as f:
+            if configs:
+                f.write("\n".join(sorted(configs)))
+            else:
+                f.write("") # Файл остается пустым, ссылка в Nekobox не ломается
 
-    if mix_data:
-        with open("mix.txt", 'w', encoding='utf-8') as f:
-            f.write("\n".join(mix_data))
+    # Общий MIX файл
+    with open("mix.txt", 'w', encoding='utf-8') as f:
+        if mix_data:
+            f.write("\n".join(sorted(mix_data)))
+        else:
+            f.write("")
+    
+    print(f"Парсинг завершен! Уникальных серверов: {len(mix_data)}")
 
 if __name__ == "__main__":
     process()
