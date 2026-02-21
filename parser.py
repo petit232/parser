@@ -2,6 +2,7 @@ import os
 import re
 import requests
 import base64
+import json
 from datetime import datetime
 
 # --- МАКСИМАЛЬНЫЙ СПРАВОЧНИК СТРАН И МАРКЕРОВ ---
@@ -42,10 +43,7 @@ def get_unique_id(config):
     return match.group(2) if match else config
 
 def sanitize_sources(file_path):
-    """
-    Защита от затупка: чистит all_sources.txt от дубликатов ссылок, 
-    мусорных символов и пустых строк. Обновляет файл.
-    """
+    """Очистка all_sources.txt от дублей и мусора."""
     if not os.path.exists(file_path):
         return []
     
@@ -57,40 +55,77 @@ def sanitize_sources(file_path):
     seen = set()
 
     for line in raw_lines:
-        # Удаляем кавычки, запятые, лишние пробелы по краям
         s = line.strip().strip('",\'').strip()
-        
-        # Пропускаем пустые строки и дубликаты
         if not s or s in seen:
             continue
-        
-        # Проверка: является ли это валидной ссылкой или прокси-конфигом
         if s.startswith("http") or any(proto in s for proto in PROTOCOLS):
             clean_sources.append(s)
             seen.add(s)
 
-    # Перезаписываем файл-источник чистыми данными
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(clean_sources))
     
-    print(f"Очистка завершена. Было: {len(raw_lines)}, стало: {len(clean_sources)}")
+    print(f"Очистка завершена. Источников: {len(clean_sources)}")
     return clean_sources
+
+def identify_country(config):
+    """
+    Улучшенная логика идентификации страны.
+    Проверяет флаги, домены и ключевые слова с использованием регулярных выражений.
+    """
+    config_lower = config.lower()
+    
+    # Специальная обработка для VMess (декодируем JSON, чтобы заглянуть внутрь)
+    if config_lower.startswith("vmess://"):
+        try:
+            v_data = json.loads(decode_base64(config[8:]))
+            search_text = (v_data.get('ps', '') + " " + v_data.get('add', '') + " " + v_data.get('sni', '')).lower()
+        except:
+            search_text = config_lower
+    else:
+        search_text = config_lower
+
+    # 1. Сначала ищем флаги (самый надежный маркер)
+    for country, info in COUNTRIES.items():
+        if info["flag"] in config:
+            return country
+
+    # 2. Поиск по ключам с защитой от частичных совпадений
+    for country, info in COUNTRIES.items():
+        for key in info["keys"]:
+            k_low = key.lower()
+            
+            # Если ключ — эмодзи или спецсимвол, ищем просто вхождением
+            if any(ord(char) > 127 for char in k_low):
+                if k_low in search_text:
+                    return country
+                continue
+
+            # Регулярка: ищем ключ так, чтобы он не был частью другого слова
+            # Границы: начало строки, конец строки, знаки пунктуации, точки, тире
+            pattern = r'(?i)(?:\.|\-|_|/|@|\s|^)' + re.escape(k_low) + r'(?:\.|\-|_|/|@|\s|:|\?|#|$)'
+            if re.search(pattern, search_text):
+                return country
+            
+            # Дополнительная проверка: если ключ является частью домена (например, .by)
+            if f".{k_low}." in search_text or search_text.endswith(f".{k_low}"):
+                return country
+
+    return None
 
 def process():
     source_file = 'all_sources.txt'
-    
-    # Сначала чистим источники (Защита от затупка)
     sources = sanitize_sources(source_file)
     
     if not sources:
-        print("Список источников пуст после очистки.")
+        print("Список источников пуст.")
         return
 
     all_raw_links = []
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     timestamp_mark = f"\n\n# Last Update: {now}"
 
-    print(f"Начинаю сбор данных из {len(sources)} проверенных источников...")
+    print(f"Сбор данных из {len(sources)} источников...")
 
     for url in sources:
         if url.startswith("http"):
@@ -105,9 +140,8 @@ def process():
                     
                     found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', text)
                     all_raw_links.extend(found)
-                    print(f"--- Найдено: {len(found)} шт.")
             except Exception as e:
-                print(f"--- Ошибка загрузки {url}: {e}")
+                print(f"Ошибка загрузки {url}: {e}")
         elif any(proto in url for proto in PROTOCOLS):
             found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', url)
             all_raw_links.extend(found if found else [url])
@@ -116,7 +150,7 @@ def process():
     mix_data = set()
     unique_check = set()
 
-    print("Фильтрация дубликатов конфигов и распределение по странам...")
+    print("Анализ локаций и удаление дубликатов...")
 
     for config in all_raw_links:
         config = config.strip()
@@ -126,37 +160,14 @@ def process():
             continue
         unique_check.add(uid)
 
-        config_lower = config.lower()
-        assigned = False
+        country = identify_country(config)
+        if country:
+            structured_data[country].add(config)
         
-        # 1. Поиск по флагам
-        for country, info in COUNTRIES.items():
-            if info["flag"] in config:
-                structured_data[country].add(config)
-                assigned = True
-                break
-        
-        # 2. Поиск по ключевым словам
-        if not assigned:
-            for country, info in COUNTRIES.items():
-                for key in info["keys"]:
-                    key_low = key.lower()
-                    if len(key_low) <= 3:
-                        if re.search(r'[^a-z0-9]' + re.escape(key_low) + r'[^a-z0-9]', f" {config_lower} "):
-                            structured_data[country].add(config)
-                            assigned = True
-                            break
-                    elif key_low in config_lower:
-                        structured_data[country].add(config)
-                        assigned = True
-                        break
-                if assigned:
-                    break
-
         mix_data.add(config)
 
     # СОХРАНЕНИЕ
-    print("Сохранение результатов...")
+    print("Запись файлов...")
     for country in COUNTRIES:
         filename = f"{country}.txt"
         configs = sorted(list(structured_data[country]))
@@ -170,7 +181,7 @@ def process():
             f.write("\n".join(sorted(list(mix_data))))
         f.write(timestamp_mark)
 
-    print(f"Готово! Всего уникальных серверов сохранено: {len(mix_data)}")
+    print(f"Успех! Уникальных конфигов: {len(mix_data)}")
 
 if __name__ == "__main__":
     process()
