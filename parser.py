@@ -21,9 +21,6 @@ COUNTRIES = {
     "france": {"keys": ["🇫🇷", "france", "франция", "paris", "cdg", "ovh", "fr"], "flag": "🇫🇷"}
 }
 
-# Ключи для удаления мусора (чтобы не путать с другими странами)
-BLACKLIST = ["anycast", "relay", "multi", "wangcai2", "bl"]
-
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
 def decode_base64(data):
@@ -34,8 +31,13 @@ def decode_base64(data):
         return base64.b64decode(data).decode('utf-8')
     except: return data
 
+def get_unique_id(config):
+    # Извлекаем хост и порт для проверки уникальности
+    match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
+    return match.group(2) if match else config
+
 def process():
-    all_raw_data = []
+    all_raw_links = []
     source_file = 'all_sources.txt'
     if not os.path.exists(source_file): return
 
@@ -45,46 +47,47 @@ def process():
     for line in lines:
         line = line.strip()
         if not line: continue
-        if any(proto in line.lower() for proto in PROTOCOLS):
-            all_raw_data.append(line)
-        elif line.startswith("http"):
+        
+        # Если это ссылка на подписку
+        if line.startswith("http") and not any(p in line for p in PROTOCOLS):
             try:
                 resp = requests.get(line, timeout=15)
                 content = decode_base64(resp.text)
-                all_raw_data.extend(content.splitlines())
-            except: pass
+                # Вытаскиваем все конфиги из скачанного контента
+                for sub_line in content.splitlines():
+                    if any(proto in sub_line for proto in PROTOCOLS):
+                        all_raw_links.append(sub_line.strip())
+            except: print(f"Ошибка загрузки: {line}")
+        # Если это прямая ссылка (или текст с ссылками)
+        elif any(proto in line for proto in PROTOCOLS):
+            all_raw_links.append(line)
 
     structured_data = {country: set() for country in COUNTRIES}
     mix_data = set()
     unique_check = set()
 
-    for config in all_raw_data:
+    for config in all_raw_links:
         config = config.strip()
-        if not any(proto in config.lower() for proto in PROTOCOLS): continue
+        uid = get_unique_id(config)
+        
+        # Удаление повторов (и в сырых, и в готовых)
+        if uid in unique_check: continue
+        unique_check.add(uid)
 
-        # Дедупликация (по хосту и порту)
-        server_match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
-        if server_match:
-            addr = server_match.group(2)
-            if addr in unique_check: continue
-            unique_check.add(addr)
-
-        # Анализируем всю строку (и название, и сам адрес сервера)
         config_lower = config.lower()
         assigned = False
         
-        # Сначала ищем по флагам (самый высокий приоритет)
+        # 1. Приоритет флагам
         for country, info in COUNTRIES.items():
             if info["flag"] in config:
                 structured_data[country].add(config)
                 assigned = True
                 break
         
-        # Если флаг не найден, ищем по ключам
+        # 2. Поиск по ключам
         if not assigned:
             for country, info in COUNTRIES.items():
                 for key in info["keys"]:
-                    # Используем поиск с границами для коротких ключей (типа 'us', 'de')
                     if len(key) <= 3:
                         if re.search(r'[^a-z0-9]' + re.escape(key) + r'[^a-z0-9]', f" {config_lower} "):
                             structured_data[country].add(config)
@@ -98,7 +101,7 @@ def process():
 
         mix_data.add(config)
 
-    # Чистим старое и пишем новое
+    # Удаляем старье и сохраняем
     for f in os.listdir('.'):
         if f.endswith('.txt') and f not in ['all_sources.txt', 'requirements.txt']:
             os.remove(f)
