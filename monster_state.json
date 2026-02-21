@@ -1,283 +1,283 @@
 {
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@86.38.214.20:8880/?type=ws&encryption=none&host=us.laoyoutiao.link&path=%2FTelegramU0001F1E8U0001F1F3%20%40MxlShare%20%40WangCai2%20": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@88.216.67.238:2096?encryption=none&security=tls&sni=sni.jpmj.dev&type=ws&host=sni.jpmj.dev&path=%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "CW"
+    "geoip": "LT"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@89.116.180.63:8880?allowInsecure=0&sni=jp.laoyoutiao.link&type=ws&host=jp.laoyoutiao.link&path=/TelegramU0001F1E8U0001F1F3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "UA"
   },
   "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.81.58.8:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://0132166f-e702-48ed-a9e7-b07af768faf8@89.116.161.251:8880/?type=ws&encryption=none&host=cf.d3z.net&path=%2F": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.153.7.216:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "PL"
   },
   "vless://0132166f-e702-48ed-a9e7-b07af768faf8@89.116.250.251:8880/?type=ws&encryption=none&host=cf.d3z.net&path=%2F": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@86.38.214.29:8880/?type=ws&encryption=none&host=hk.laoyoutiao.link&path=%2FTelegramU0001F1E8U0001F1F3%20%40MxlShare%20%40WangCai2%20%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "TR"
   },
   "vless://583ceab3-4022-4553-9158-9bedc625ad4e@89.116.180.186:8880?encryption=none&security=none&sni=Telegram-channel-WangCai2&type=ws&host=ip.langmanshanxi.top&path=/": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "UA"
   },
   "vless://730f02b4-a187-4498-b3fa-9e9f1dccf47c@86.38.214.53:8880?type=httpupgrade&host=dl1.mcinet.xyz.&path=/?ed=8880@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn&security=none": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@86.38.214.101:2096/?type=ws&encryption=none&host=juzibaipiao.5112233.xyz&path=%2F%3Fed%3D2048&security=tls&sni=juzibaipiao.5112233.xyz&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://45eee3c9-ac41-43d5-a03f-b7b298a1d162@45.81.58.159:443?mode=auto&path=/cloudapi&security=tls&alpn=h2&encryption=none&extra={": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://0132166f-e702-48ed-a9e7-b07af768faf8@88.216.69.251:8880/?type=ws&encryption=none&host=cf.d3z.net&path=%2FTelegram%F0%9F%87%A8%F0%9F%87%B3%20%40WangCai2%20%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://b99590df-eda0-4e34-e1a9-3d1118faed83@86.38.214.213:8880/?type=httpupgrade&encryption=none&host=nufillter.jtip.sbs.&path=%2F": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "vless://4dbc9705-e9d6-53c5-818d-ea62e57bd784@86.38.214.30:2095/?type=httpupgrade&encryption=none&host=Ge.PcStorEaRsOft.iR.&path=%2Fegram---AR_ore--tem--ar_sre--egram--AR_st_n--tegram--ar_orE_pn--tgram----aR_tre_pN%3Fed%3D2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "vless://401374e6-df77-41fb-f638-dad8184f175b@45.153.7.133:443/?type=grpc&encryption=none&security=tls&sni=pqh36v4.hiddendom.shop&alpn=h2": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "PL"
   },
   "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.153.7.31:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "PL"
+    "geoip": "LT"
   },
   "trojan://bpb-trojan@86.38.214.132:443/?type=ws&host=bpb.my79801.com&path=%2Ftr%3Fed&security=tls&sni=bpb.my79801.com": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "TR"
   },
   "trojan://d2698cf9-c47e-455c-8384-12e642cbba15@89.116.180.179:443?security=tls&sni=p6us4.pqjc.buzz&type=ws&path=/pq/us4&host=p6us4.pqjc.buzz": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@89.116.180.161:443?encryption=none&security=tls&sni=juzibaipiao.5112233.xyz&type=ws&host=juzibaipiao.5112233.xyz&path=%2f%3fed%3d2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "UA"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@88.216.66.193:443?encryption=none&security=tls&sni=juzibaipiao.5112233.xyz&type=ws&host=juzibaipiao.5112233.xyz&path=%2f%3fed%3d2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "CW"
+    "geoip": "LT"
   },
   "trojan://bpb-trojan@45.81.58.174:443/?type=tcp&security=tls&sni=bpb.my79801.com&allowInsecure=1": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://730f02b4-a187-4498-b3fa-9e9f1dccf47c@88.216.67.3:8880?type=httpupgrade&host=dl1.mcinet.xyz.&path=/?ed=8880-@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn&security=none": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "CW"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@88.216.69.63:8880?path=/Telegram&security=none&encryption=none&host=jp.laoyoutiao.link&type=ws&sni=jp.laoyoutiao.link": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://401374e6-df77-41fb-f638-dad8184f175b@45.81.58.168:443/?type=grpc&encryption=none&security=tls&sni=pqh24v3.hiddendom.shop&alpn=h2": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "US"
   },
   "vless://b5441b0d-2147-4898-8a6a-9b2c87f58382@45.81.58.130:8880/?type=ws&encryption=none&host=bitget1.asdasd.click": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://730f02b4-a187-4498-b3fa-9e9f1dccf47c@89.116.180.7:8880?type=httpupgrade&host=dl1.mcinet.xyz.&path=/?ed=8880-@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn----@Evay_vpn&security=none": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "UA"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@88.216.66.38:443?encryption=none&security=tls&sni=juzibaipiao.5112233.xyz&type=ws&host=juzibaipiao.5112233.xyz&path=%2f%3fed%3d2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "CW"
   },
   "vless://b5441b0d-2147-4898-8a6a-9b2c87f58382@86.38.214.3:8880/?type=ws&encryption=none&host=bitget1.asdasd.click&path=%2FTelegram%F0%9F%87%A8%F0%9F%87%B3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "vless://583ceab3-4022-4553-9158-9bedc625ad4e@86.38.214.177:8880?allowInsecure=0&sni=Telegram-channel-WangCai2&type=ws&host=ip.langmanshanxi.top&path=/TelegramU0001F1E8U0001F1F3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "vless://ee2bb495-2632-445b-b1f8-3c476a50b78b@89.116.250.203:2053?path=%2F%3FTELEGRAM-MARAMBASHI_MARAMBASHI_MARAMBASHI%3Fed%3D512&security=tls&encryption=none&host=dl1-tr-cdn.easy-upload.org&type=ws&sni=dl1-tr-cdn.easy-upload.org": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@89.116.180.238:2096?path=/?ed=2560&telegram\ud83c\udde8\ud83c\uddf3+@wangcai2&security=tls&encryption=none&insecure=1&host=sni.jpmj.dev&type=ws&allowInsecure=1&sni=sni.jpmj.dev": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "UA"
   },
   "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.81.58.12:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://401374e6-df77-41fb-f638-dad8184f175b@89.116.180.248:443/?type=grpc&encryption=none&security=tls&sni=pqh23v4.hiddendom.shop&alpn=h2": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "UA"
   },
   "trojan://Aimer@86.38.214.186:443/?type=tcp&security=tls&sni=agepj.ambercc.filegear-sg.me": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "TR"
+    "geoip": "LT"
   },
   "vless://2cd6ed0f-636e-4e6c-9449-5a263d7a0fa5@89.116.161.250:8443?encryption=none&security=tls&sni=cfed.tgzdyz2.top&fp=random&type=ws&host=cfed.tgzdyz2.top&path=TG%40ZDYZ2": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "US"
   },
   "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@89.116.250.138:2096?type=ws&security=tls&encryption=none&sni=sni.111000.indevs.in&path=/%3Fed%3D2560%26Telegram%F0%9F%87%A8%F0%9F%87%B3%40WangCai2&host=sni.111000.indevs.in": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@86.38.214.168:8880/?type=ws&encryption=none&host=kjgx.laoyoutiao.link&path=Telegram%40WangCai2%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "TR"
+    "geoip": "LT"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@89.116.250.6:2083?encryption=none&security=tls&sni=juzibaipiao.5112233.xyz&type=ws&host=juzibaipiao.5112233.xyz&path=%2f%3fed%3d2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://34c01e61-f4f3-4afb-a83b-406caf8caa33@86.38.214.254:8880/?type=ws&encryption=none&host=yg.bantony199.top&path=%2FTelegram": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "TR"
+    "geoip": "LT"
   },
   "vless://583ceab3-4022-4553-9158-9bedc625ad4e@89.116.161.177:8880/?type=ws&encryption=none&host=ip.langmanshanxi.top&path=%2FTelegram%F0%9F%87%A8%F0%9F%87%B3%20%40WangCai2%20%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://0132166f-e702-48ed-a9e7-b07af768faf8@89.117.112.251:8880/?type=ws&encryption=none&host=cf.d3z.net&path=%2FTelegram%F0%9F%87%A8%F0%9F%87%B3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "BG"
+    "geoip": "LT"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@89.116.180.156:8880?allowInsecure=0&sni=Telegram-channel-WangCai2&type=ws&host=kjgx.laoyoutiao.link&path=/TelegramU0001F1E8U0001F1F3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "UA"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@45.153.7.63:8880/?type=ws&encryption=none&host=jp.laoyoutiao.link&path=%2FTelegram": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@89.116.180.138:2096?path=%2F%3Fed%3D2560%26Telegram%F0%9F%87%A8%F0%9F%87%B3%40WangCai2&security=tls&encryption=none&host=sni.111000.indevs.in&allowinsecure=0&type=ws&sni=sni.111000.indevs.in": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "UA"
   },
   "trojan://Aimer@45.153.7.216:2053/?type=tcp&security=tls&sni=ngepx.ambercc.filegear-sg.me": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "PL"
   },
   "trojan://bpb-trojan@89.117.112.181:443/?type=tcp&security=tls&sni=bpb.my79801.com&allowInsecure=1": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "BG"
   },
   "vless://401374e6-df77-41fb-f638-dad8184f175b@88.216.67.84:443/?type=grpc&encryption=none&security=tls&sni=pqh36v4.hiddendom.shop&alpn=h2": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "CW"
   },
   "vless://51d22c42-5342-4715-a927-1b76226dd4cf@89.116.250.75:8443?security=tls&sni=join-telegram-channel-vipv2rey.mamare.ir&type=grpc&serviceName=@vipv2rey@vipv2rey@vipv2rey&encryption=none": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@45.153.7.213:8880/?type=ws&encryption=none&host=jp.laoyoutiao.link": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "PL"
   },
   "trojan://bpb-trojan@89.116.250.94:443/?type=tcp&security=tls&sni=bpb.my79801.com": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://f775978b-6e22-41a8-ae5e-5f9779e6745f@89.116.180.130:2053?encryption=none&security=tls&sni=juzibaipiao.5112233.xyz&type=ws&host=juzibaipiao.5112233.xyz&path=%2f%3fed%3d2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "UA"
+    "geoip": "LT"
   },
   "vless://ee2bb495-2632-445b-b1f8-3c476a50b78b@89.116.250.49:2053?path=%2F&security=tls&encryption=none&host=dl1-tr-cdn.easy-upload.org&type=ws&sni=dl1-tr-cdn.easy-upload.org": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "trojan://NISHIKUITAN111@88.216.67.148:443/?type=tcp&security=tls": {
-    "last_checked": 1771695759.929802,
-    "status": "OK",
-    "geoip": "CW"
-  },
-  "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.153.7.224:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
-  "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@89.116.161.29:8880?security=&sni=hk.laoyoutiao.link&allowInsecure=1&type=ws&path=/TelegramU0001F1E8U0001F1F3%20@MxlShare%20@WangCai2%20/?ed%3D2560&host=hk.laoyoutiao.link&encryption=none": {
-    "last_checked": 1771695759.929802,
+  "vless://cc6b985d-0362-4129-8763-38564174fb3e@45.153.7.224:443/?type=grpc&encryption=none&serviceName=michi&security=tls&sni=iryiccyne.wwtraveler.com&alpn=http%2F1.1%2Ch2&fp=chrome": {
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "US"
+    "geoip": "PL"
+  },
+  "vless://fab7bf9c-ddb9-4563-8a04-fb01ce6c0fbf@89.116.161.29:8880?security=&sni=hk.laoyoutiao.link&allowInsecure=1&type=ws&path=/TelegramU0001F1E8U0001F1F3%20@MxlShare%20@WangCai2%20/?ed%3D2560&host=hk.laoyoutiao.link&encryption=none": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "LT"
   },
   "ss://6202b230-417c-4d8e-b624-0f71afa9c75d@88.216.66.238:2096?encryption=none&security=tls&sni=sni.jpmj.dev&fp=chrome&insecure=1&type=ws&host=sni.jpmj.dev&path=%2F%3Fed%3D2560%26telegram%F0%9F%87%A8%F0%9F%87%B3%2B@wangcai2": {
     "last_checked": 1771695759.929802,
@@ -285,9 +285,9 @@
     "geoip": "LT"
   },
   "vless://5b97592b-1e9c-7747-e571-b4291f98c6ab@86.38.214.30:8880/?type=httpupgrade&encryption=none&host=LondoN-Ar-25.pcsTorearsOft.iR.&path=%2Fwww.fast.com.live.skornorth.com.zula.ir%3Fed%3D2048": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "ss://ca6a678d-94a6-4273-9144-9656ff7e79d1@89.116.250.135:2053/?security=tls&alpn=h3": {
     "last_checked": 1771695759.929802,
@@ -295,44 +295,44 @@
     "geoip": "LT"
   },
   "vless://762e148f-39f7-4ef3-a348-c3584bf436d2@86.38.214.30:8080/?type=ws&encryption=none&host=sNaPp.MaStErSrV.ir.&path=%2F": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "TR"
   },
   "vless://583ceab3-4022-4553-9158-9bedc625ad4e@89.117.112.186:8880?allowInsecure=0&sni=Telegram-channel-WangCai2&type=ws&host=ip.langmanshanxi.top&path=/TelegramU0001F1E8U0001F1F3": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "BG"
   },
   "trojan://NISHIKUITAN111@88.216.66.169:443/?type=tcp&security=tls": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "CW"
+  },
+  "vless://b5441b0d-2147-4898-8a6a-9b2c87f58382@45.81.58.53:8880/?type=ws&encryption=none&host=bitget1.asdasd.click&path=%2F%3Fed%3D2560": {
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
-  "vless://b5441b0d-2147-4898-8a6a-9b2c87f58382@45.81.58.53:8880/?type=ws&encryption=none&host=bitget1.asdasd.click&path=%2F%3Fed%3D2560": {
-    "last_checked": 1771695759.929802,
-    "status": "OK",
-    "geoip": "US"
-  },
   "trojan://2e7d3f13-be1b-479c-94ff-0e95c2bd565d@89.116.180.158:443?security=tls&sni=3us2.pqjc.buzz&type=tcp": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "UA"
+    "geoip": "LT"
   },
   "vless://b04a24aa-394e-5278-8202-dc480ae6f49b@86.38.214.22:2052/?type=ws&encryption=none&host=sPeedtest2.sbs.sg.vless.sitespeedtest.net&path=%2Fvless%23%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL%2C%40V2RAY_SPATIAL": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "TR"
   },
   "vless://a2fde2a2-4c79-40fa-b556-a8668e65cca8@84.32.84.33:443?security=tls&sni=speedtest.net&type=ws&path=/": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://f3371028-eb17-45b8-85a8-8fdf575164a9@ir.snappmarket-cdn.com:80?path=/uk-employees/wp-content?ed=2048&security=none&encryption=none&fp=chrome&type=ws": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
-    "geoip": "LT"
+    "geoip": "UN"
   },
   "vless://b05d5744-6986-4567-bd34-b3a37766ead4@CP8.PRODNSSPEED10.IR:443?mode=auto&path=/&security=tls&encryption=none&extra={": {
     "last_checked": 1771695759.929802,
@@ -340,22 +340,22 @@
     "geoip": "LT"
   },
   "vless://ff6fb512-147d-419a-9672-e131133f7189@5.199.163.42:8443?security=reality&encryption=none&pbk=L3X1eh1Jq_6PKJ6LlwjgiWq0XNaDOqCVKgIElJ5nkVA&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=tradingview.com&sid=e0ef3d5c0aacb615": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://108940ab-48de-4bee-a018-f9b9a36dd851@181.214.147.79:8443?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&security=reality&sid=6ba85179e30d4fc2&sni=ign.dev&type=tcp": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpBUmd2R1p5d0ErZ2FjZ0dWMjZCdm11MDUrd1ptUlcvaitBZFUrWjhCdDQ0PQ==@193.135.174.135:990": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "BG"
   },
   "vless://108940ab-48de-4bee-a018-f9b9a36dd851@181.214.147.3:8443?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&security=reality&sid=6ba85179e30d4fc2&sni=ign.dev&type=tcp": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
@@ -365,37 +365,99 @@
     "geoip": "LT"
   },
   "vless://29632408-8a2f-4bfc-a7b3-c8c8cdb220ac@213.252.246.6:443?security=reality&alpn=h2&encryption=none&pbk=ckRcueERkPqqjZABwxqni_J_Nbb70Q6k5fEEUAjoImw&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=msn.com": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://9b5dffa2-8ab0-4e7c-af62-725a320957cc@84.32.151.60:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=yahoo.com&fp=chrome&security=reality&pbk=ckRcueERkPqqjZABwxqni_J_Nbb70Q6k5fEEUAjoImw&sid=": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://8e62fdd4-006d-4920-aef8-f3c87ed60157@CF8.FASTSPEEDS.IR:8443?mode=multi&security=tls&encryption=none&insecure=0&fp=chrome&type=grpc&serviceName=vless&allowInsecure=0&sni=de3.roshdadcollection.ir": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://8861c4ec-73e5-4467-8e9f-2e470213b20b@c2.darkstrange.ir:2053?path=/darkstrange&security=tls&encryption=none&insecure=1&host=cf.xo-connection.ir&fp=chrome&type=ws&allowInsecure=1&sni=cf.xo-connection.ir": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "CW"
   },
   "vless://6a45de8b-46e5-4da4-b242-3e18f3228087@ips.rainoteam.store:80/?type=xhttp&encryption=none": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "vless://05dc09d5-5c56-454b-a34e-6ef743d91e1a@lithuania.boot-lee.ru:8443?type=tcp&sni=sun6-22.userapi.com&fp=chrome&pbk=3JGwSDrfkiCPdU3rvQP5m0z4Ag_UB_2w8Qq3VMXmo28&sid=abc323&flow=xtls-rprx-vision&allowInsecure=1": {
-    "last_checked": 1771695759.929802,
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   },
   "ss://ff6fb512-147d-419a-9672-e131133f7189@lt-cherry-01.com:8443?security=reality&encryption=none&pbk=L3X1eh1Jq_6PKJ6LlwjgiWq0XNaDOqCVKgIElJ5nkVA&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=tradingview.com&sid=e0ef3d5c0aacb615": {
     "last_checked": 1771695759.929802,
+    "status": "OK",
+    "geoip": "LT"
+  },
+  "vless://ca6a678d-94a6-4273-9144-9656ff7e79d1@89.116.250.135:2053/?security=tls&alpn=h3": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "LT"
+  },
+  "ss://b05d5744-6986-4567-bd34-b3a37766ead4@CP8.PRODNSSPEED10.IR:443?mode=auto&path=%2F&security=tls&encryption=none&extra=%7B%22scMaxEachPostBytes%22%3A1000000%2C%22xPaddingBytes%22%3A%22100-1000%22%7D&insecure=0&type=xhttp&allowInsecure=0&sni=SHARAF.followerarzon1.com": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "LT"
+  },
+  "vmess://eyJhZGQiOiJ0cjEtc21hcnQuYWRlbHBpbmcuY29tIiwiYWlkIjoiMCIsImFscG4iOiIiLCJmcCI6IiIsImhvc3QiOiIiLCJpZCI6IjQzZGNkY2UxLTNjZWEtNDE5My1iYzhkLTkwYjkyMDcxZDc3OSIsImluc2VjdXJlIjoiMCIsIm5ldCI6IndzIiwicGF0aCI6IiIsInBvcnQiOiI4MCIsInBzIjoiSVItQFYycmF5QWxwaGEtMzIiLCJzY3kiOiJhdXRvIiwic25pIjoiIiwidGxzIjoiIiwidHlwZSI6Ii0tLSIsInYiOiIyIn0=": {
+    "last_checked": 1771695976.737931,
+    "status": "FAIL"
+  },
+  "vless://6202b230-417c-4d8e-b624-0f71afa9c75d@88.216.66.238:2096?encryption=none&security=tls&sni=sni.jpmj.dev&fp=chrome&insecure=1&type=ws&host=sni.jpmj.dev&path=/?ed=2560&telegram\ud83c\udde8\ud83c\uddf3+@wangcai2": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "LT"
+  },
+  "vmess://eyJhZGQiOiIxMDQuMjEuNjkuNDQiLCJhaWQiOiIwIiwiYWxwbiI6IiIsImZwIjoiIiwiaG9zdCI6Im5hc25ldC01MTE5NTI0MjQubWNpdGVsLmNvIiwiaWQiOiJuYXNuZXQiLCJpbnNlY3VyZSI6IjAiLCJuZXQiOiJ3cyIsInBhdGgiOiIvbmFzbmV0L2NkbiIsInBvcnQiOiI4MDgwIiwicHMiOiJJUi1AVjJyYXlBbHBoYS00MyIsInNjeSI6ImF1dG8iLCJzbmkiOiIiLCJ0bHMiOiIiLCJ0eXBlIjoiLS0tIiwidiI6IjIifQ==": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "US"
+  },
+  "vmess://eyJhZGQiOiIxNS4yMzUuNTAuMTcyIiwiYWlkIjoiMCIsImFscG4iOiIiLCJmcCI6IiIsImhvc3QiOiJiYXJhZGloYS5jb20iLCJpZCI6IjAzZmNjNjE4LWI5M2QtNjc5Ni02YWVkLThhMzhjOTc1ZDU4MSIsImluc2VjdXJlIjoiMSIsIm5ldCI6IndzIiwicGF0aCI6Ii9saW5rdndzIiwicG9ydCI6IjQ0MyIsInBzIjoiSVItQFYycmF5QWxwaGEtMzkiLCJzY3kiOiJhdXRvIiwic25pIjoiIiwidGxzIjoidGxzIiwidHlwZSI6Ii0tLSIsInYiOiIyIn0=vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "CA"
+  },
+  "vmess://eyJhZGQiOiI1Ny4xMjkuMjQuMTI0IiwiYWlkIjoiMCIsImFscG4iOiIiLCJmcCI6IiIsImhvc3QiOiJhdmVpcm9yLmNvbSIsImlkIjoiMDNmY2M2MTgtYjkzZC02Nzk2LTZhZWQtOGEzOGM5NzVkNTgxIiwiaW5zZWN1cmUiOiIxIiwibmV0Ijoid3MiLCJwYXRoIjoiL2xpbmt2d3MiLCJwb3J0IjoiNDQzIiwicHMiOiJJUi1AVjJyYXlBbHBoYS0zMyIsInNjeSI6ImF1dG8iLCJzbmkiOiJ3cm1lbG13eGxmLmdrdGV2bHJxem53cXFvenkuZmFicGZzNjZnaXptbm9qaGN2cXh3bC5reXRyY2Z6cWxhODdndmd2czZjN2tqbnJ1YnVoLmNjIiwidGxzIjoidGxzIiwidHlwZSI6Ii0tLSIsInYiOiIyIn0=vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "DE"
+  },
+  "vmess://eyJhZGQiOiIxNDcuMTM1LjIxMS42MSIsImFpZCI6IjAiLCJhbHBuIjoiIiwiZnAiOiIiLCJob3N0IjoiIiwiaWQiOiJjZGMyNzg4MC1hYzJiLTU5MWYtYjY3Ny1mY2IwMmZjYjQyOGEiLCJpbnNlY3VyZSI6IjAiLCJuZXQiOiJ0Y3AiLCJwYXRoIjoiIiwicG9ydCI6IjgwODAiLCJwcyI6IklSK0BWMnJheUFscGhhLTMyIiwic2N5IjoiY2hhY2hhMjAtcG9seTEzMDUiLCJzbmkiOiIiLCJ0bHMiOiIiLCJ0eXBlIjoibm9uZSIsInYiOiIyIn0=vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "FAIL"
+  },
+  "vmess://eyJhZGQiOiIxNDYuNTkuNTUuNTAiLCJhaWQiOiIwIiwiYWxwbiI6IiIsImZwIjoiIiwiaG9zdCI6Im8ubWV0dWppLmNvbSIsImlkIjoiMDNmY2M2MTgtYjkzZC02Nzk2LTZhZWQtOGEzOGM5NzVkNTgxIiwiaW5zZWN1cmUiOiIxIiwibmV0Ijoid3MiLCJwYXRoIjoiL2xpbmt2d3MiLCJwb3J0IjoiNDQzIiwicHMiOiJJUi1AVjJyYXlBbHBoYS0zNSIsInNjeSI6ImF1dG8iLCJzbmkiOiIiLCJ0bHMiOiJ0bHMiLCJ0eXBlIjoiLS0tIiwidiI6IjIifQ==vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "FR"
+  },
+  "vmess://eyJhZGQiOiI4NS4xOTQuMjQzLjExNyIsImFpZCI6IjAiLCJhbHBuIjoiIiwiZnAiOiIiLCJob3N0IjoiODUuMTk0LjI0My4xMTciLCJpZCI6IjE0MjNmYTU0LTEyNTYtNGNiYi05NjYzLWUwY2NhYjQ2ZjAyYSIsImluc2VjdXJlIjoiMCIsIm5ldCI6IndzIiwicGF0aCI6Ii92bWVzcy1hcmdvIiwicG9ydCI6IjU3ODc4IiwicHMiOiJJUi1AVjJyYXlBbHBoYS0yNyIsInNjeSI6ImF1dG8iLCJzbmkiOiIiLCJ0bHMiOiIiLCJ0eXBlIjoiLS0tIiwidiI6IjIifQ==vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "FAIL"
+  },
+  "ss://7c3f08c8-7b3b-4028-91d8-378a18c2b62a@93.115.25.177:443?security=reality&encryption=none&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&headerType=none&fp=qq&type=tcp&flow=xtls-rprx-vision&sni=mycatcollection.com&sid=6ba85179e30d4fc2": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "LT"
+  },
+  "vmess://eyJhZGQiOiJzZXJ2ZXJzLnh2b24uaW4iLCJhaWQiOiIwIiwiYWxwbiI6IiIsImZwIjoiY2hyb21lIiwiaG9zdCI6IiIsImlkIjoiNDNhN2M2ZmQtYzUyZC00ZTFhLWJhMmItYjdhNWQzOTNiZWEwIiwibmV0IjoidGNwIiwicGF0aCI6Ii8iLCJwb3J0IjoiMjA4NyIsInBzIjoiQFlhbVlhbVByb3h5Iiwic2N5IjoiYXV0byIsInNuaSI6InNlcnZlcnMueHZvbi5pbiIsInRscyI6InRscyIsInR5cGUiOiJodHRwIiwidiI6IjIifQ==vmess": {
+    "last_checked": 1771695976.737931,
+    "status": "OK",
+    "geoip": "IR"
+  },
+  "vless://ff6fb512-147d-419a-9672-e131133f7189@lt-cherry-01.com:8443?security=reality&encryption=none&pbk=L3X1eh1Jq_6PKJ6LlwjgiWq0XNaDOqCVKgIElJ5nkVA&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=tradingview.com&sid=e0ef3d5c0aacb615": {
+    "last_checked": 1771695976.737931,
     "status": "OK",
     "geoip": "LT"
   }
