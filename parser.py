@@ -34,7 +34,7 @@ COUNTRIES = {
     "france": {"flag": "🇫🇷", "code": "FR", "name": "France"}
 }
 
-# Строгий отбор протоколов для обхода блокировок (РФ: VLESS Reality, Trojan, SS)
+# Строгий отбор протоколов для обхода блокировок в России (DPI)
 ALLOWED_PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
 # Глобальное состояние
@@ -43,14 +43,14 @@ CACHE_LOCK = threading.Lock()
 PROCESSED_COUNT = 0
 SHOULD_EXIT = False 
 
-# Настройки производительности и лимитов (Максимально агрессивные)
-MAX_AGE_HOURS = 48          # Время жизни конфига (удаление старья)
-BLACKLIST_BAIL_HOURS = 24   # Время бана за мертвый порт
+# Настройки производительности и лимитов
+MAX_AGE_HOURS = 48          # Время жизни конфига (удаление старья через 48 часов)
+BLACKLIST_BAIL_HOURS = 12   # Время бана за мертвый порт
 MAX_BLACKLIST_SIZE = 50000  # Максимальное количество забаненных IP
 GEOIP_LIMIT_PER_RUN = 3000  # Лимит новых GeoIP проверок за цикл
-THREAD_COUNT = 100          # Ультра-скорость проверки портов
-GEOIP_PARALLEL_LEVEL = 5    # Сколько API опрашивать ОДНОВРЕМЕННО для одного IP
-RUN_INTERVAL_MINUTES = 10   # Интервал между автоматическими запусками (в минутах)
+THREAD_COUNT = 60           # Количество потоков для проверки портов
+GEOIP_PARALLEL_LEVEL = 5    # Сколько API опрашивать ОДНОВРЕМЕННО для одного IP (стая из 5 API)
+PORT_TIMEOUT = 3.5          # Увеличенный таймаут, чтобы медленные сервера не отсеивались
 
 def signal_handler(sig, frame):
     """Корректный выход при прерывании."""
@@ -101,9 +101,10 @@ def get_server_info(config):
     except Exception: pass
     return None, None
 
-def is_node_alive(host, port, timeout=1.5):
-    """Мгновенная проверка доступности TCP порта."""
+def is_node_alive(host, port, timeout=PORT_TIMEOUT):
+    """Мгновенная проверка доступности TCP порта с нормальным таймаутом."""
     if not host or not port: return False
+    # Игнорируем локальные адреса
     if host.startswith(('127.', '192.168.', '10.', '172.16.')) or host == 'localhost':
         return False
     try:
@@ -114,16 +115,18 @@ def is_node_alive(host, port, timeout=1.5):
 
 # --- МОДУЛЬ ДИЗАЙНА (ЗАВОРАЧИВАНИЕ И ФИКС ИМЕН) ---
 
-def beautify_config(config, country_key):
+def beautify_config(config, country_key=None, fallback_code="UN"):
     """
     Создает идеальное оформление: ❤️ 🏁 Страна | Код 🏁 ❤️
-    Гарантированно сохраняет параметры для Reality/Trojan.
+    Гарантированно сохраняет параметры для VLESS Reality, Trojan, SS, Hysteria.
     """
     try:
-        info = COUNTRIES.get(country_key)
-        if not info: return config
-        
-        label = f"❤️ {info['flag']} {info['name']} | {info['code']} {info['flag']} ❤️"
+        if country_key and country_key in COUNTRIES:
+            info = COUNTRIES[country_key]
+            label = f"❤️ {info['flag']} {info['name']} | {info['code']} {info['flag']} ❤️"
+        else:
+            code = fallback_code if fallback_code else "UN"
+            label = f"❤️ 🌍 Global | {code} 🌍 ❤️"
         
         if config.startswith("vmess://"):
             clean_config = config.split('#')[0]
@@ -142,34 +145,34 @@ def beautify_config(config, country_key):
 # --- ТУРБО-ДВИЖОК GEOIP (10 ИСТОЧНИКОВ API) ---
 
 def api_01(h):
-    try: return requests.get(f"http://ip-api.com/json/{h}?fields=status,countryCode", timeout=2).json().get("countryCode")
+    try: return requests.get(f"http://ip-api.com/json/{h}?fields=status,countryCode", timeout=3).json().get("countryCode")
     except: return None
 def api_02(h):
-    try: return requests.get(f"https://ipwho.is/{h}", timeout=2).json().get("country_code")
+    try: return requests.get(f"https://ipwho.is/{h}", timeout=3).json().get("country_code")
     except: return None
 def api_03(h):
-    try: return requests.get(f"https://ip2c.org/{h}", timeout=2).text.split(';')[1] if "1;" in requests.get(f"https://ip2c.org/{h}", timeout=2).text else None
+    try: return requests.get(f"https://ip2c.org/{h}", timeout=3).text.split(';')[1] if "1;" in requests.get(f"https://ip2c.org/{h}", timeout=3).text else None
     except: return None
 def api_04(h):
-    try: return requests.get(f"https://freeipapi.com/api/json/{h}", timeout=2).json().get("countryCode")
+    try: return requests.get(f"https://freeipapi.com/api/json/{h}", timeout=3).json().get("countryCode")
     except: return None
 def api_05(h):
-    try: return requests.get(f"https://ipapi.co/{h}/json/", timeout=2, headers={'User-Agent': get_random_ua()}).json().get("country_code")
+    try: return requests.get(f"https://ipapi.co/{h}/json/", timeout=3, headers={'User-Agent': get_random_ua()}).json().get("country_code")
     except: return None
 def api_06(h):
-    try: return requests.get(f"https://ip-json.com/json/{h}", timeout=2).json().get("country_code")
+    try: return requests.get(f"https://ip-json.com/json/{h}", timeout=3).json().get("country_code")
     except: return None
 def api_07(h):
-    try: return requests.get(f"https://ipapi.is/json/{h}", timeout=2).json().get("location", {}).get("country_code")
+    try: return requests.get(f"https://ipapi.is/json/{h}", timeout=3).json().get("location", {}).get("country_code")
     except: return None
 def api_08(h):
-    try: return requests.get(f"http://www.geoplugin.net/json.gp?ip={h}", timeout=2).json().get("geoplugin_countryCode")
+    try: return requests.get(f"http://www.geoplugin.net/json.gp?ip={h}", timeout=3).json().get("geoplugin_countryCode")
     except: return None
 def api_09(h):
-    try: return requests.get(f"https://api.scamalytics.com/ip/{h}", timeout=2).json().get("country_code")
+    try: return requests.get(f"https://api.scamalytics.com/ip/{h}", timeout=3).json().get("country_code")
     except: return None
 def api_10(h):
-    try: return requests.get(f"https://extreme-ip-lookup.com/json/{h}?key=demo", timeout=2).json().get("countryCode")
+    try: return requests.get(f"https://extreme-ip-lookup.com/json/{h}?key=demo", timeout=3).json().get("countryCode")
     except: return None
 
 def check_ip_location_smart(host):
@@ -180,9 +183,13 @@ def check_ip_location_smart(host):
     with CACHE_LOCK:
         if host in IP_CACHE: return IP_CACHE[host]
 
+    # Микро-задержка для GitHub Actions, чтобы не словить бан от API (429 Too Many Requests)
+    time.sleep(random.uniform(0.1, 0.4))
+
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
 
+    # Запуск 5 потоков на 1 IP
     with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as api_executor:
         future_to_api = {api_executor.submit(p, host): p for p in providers[:GEOIP_PARALLEL_LEVEL]}
         for future in as_completed(future_to_api):
@@ -197,7 +204,7 @@ def check_ip_location_smart(host):
                     return code
             except: continue
 
-    # Фолбэк на остальные API
+    # Фолбэк на остальные API, если первые 5 не ответили
     for provider in providers[GEOIP_PARALLEL_LEVEL:]:
         if SHOULD_EXIT: break
         try:
@@ -210,12 +217,13 @@ def check_ip_location_smart(host):
                 return code
         except: continue
 
-    with CACHE_LOCK: IP_CACHE[host] = None
-    return None
+    with CACHE_LOCK: IP_CACHE[host] = "UN"
+    return "UN"
 
 # --- СИСТЕМА СОХРАНЕНИЯ, ЧИСТКИ И АВТО-УДАЛЕНИЯ ---
 
 def load_blacklist():
+    """Загрузка черного списка."""
     bl = {}
     if os.path.exists('blacklist.txt'):
         try:
@@ -228,6 +236,7 @@ def load_blacklist():
     return bl
 
 def save_blacklist(bl):
+    """Сохранение черного списка."""
     now = datetime.now()
     active = {n: ts for n, ts in bl.items() if now - ts < timedelta(hours=BLACKLIST_BAIL_HOURS)}
     sorted_bl = sorted(active.items(), key=lambda x: x[1], reverse=True)[:MAX_BLACKLIST_SIZE]
@@ -257,7 +266,7 @@ def load_current_database():
             except: pass
     return db, nodes
 
-def save_and_organize(structured, failed_list):
+def save_and_organize(structured, final_mix_list, failed_list):
     """
     Главная функция синхронизации файлов. 
     Слияние новых узлов со старыми и ЖЕСТКОЕ авто-удаление (сдохших и просроченных).
@@ -266,11 +275,12 @@ def save_and_organize(structured, failed_list):
     threshold = now - timedelta(hours=MAX_AGE_HOURS)
     all_configs_to_mix = []
 
+    # 1. Сохранение по странам
     for country, configs in structured.items():
         file_name = f"{country}.txt"
         current_data = {}
         
-        # 1. Загружаем старое
+        # Загружаем старое
         if os.path.exists(file_name):
             try:
                 with open(file_name, 'r', encoding='utf-8') as f:
@@ -279,61 +289,75 @@ def save_and_organize(structured, failed_list):
                         if c and not c.startswith('#'): current_data[c] = now
             except: pass
         
-        # 2. Добавляем новое с красивым именем
+        # Добавляем новое 
         for nc in configs:
-            current_data[beautify_config(nc, country)] = now
+            current_data[nc] = now
             
-        # 3. АВТО-УДАЛЕНИЕ (оставляем только то, что не старее MAX_AGE_HOURS)
+        # АВТО-УДАЛЕНИЕ (оставляем только то, что не старее MAX_AGE_HOURS)
         valid = [c for c, ts in current_data.items() if ts > threshold]
-        all_configs_to_mix.extend(valid)
         
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 if valid: f.write("\n".join(sorted(list(set(valid)))))
-                f.write(f"\n\n# Total: {len(valid)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+                f.write(f"\n\n# Total Active: {len(valid)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
         except: pass
 
-    # Создание общего MIX (Все валидные узлы)
-    unique_mix = sorted(list(set(all_configs_to_mix)))
+    # 2. Обработка общего MIX (Объединяет все страны + Global)
+    mix_data = {}
+    if os.path.exists("mix.txt"):
+        try:
+            with open("mix.txt", 'r', encoding='utf-8') as f:
+                for line in f:
+                    c = line.strip()
+                    if c and not c.startswith('#'): mix_data[c] = now
+        except: pass
+        
+    for nc in final_mix_list:
+        mix_data[nc] = now
+        
+    valid_mix = [c for c, ts in mix_data.items() if ts > threshold]
+    valid_mix = sorted(list(set(valid_mix)))
+
     try:
         with open("mix.txt", 'w', encoding='utf-8') as f:
-            if unique_mix: f.write("\n".join(unique_mix))
-            f.write(f"\n\n# Total: {len(unique_mix)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+            if valid_mix: f.write("\n".join(valid_mix))
+            f.write(f"\n\n# Total Active: {len(valid_mix)}\n# Updated: {now.strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Основная Base64 подписка
         with open("sub_monster.txt", 'w', encoding='utf-8') as f:
-            f.write(encode_base64("\n".join(unique_mix)))
+            f.write(encode_base64("\n".join(valid_mix)))
             
-        # Запись ошибок (Failed)
+        # Запись ошибок (Failed Nodes) - Восстановлено из твоих версий!
         with open("failed_nodes.txt", 'w', encoding='utf-8') as f:
             if failed_list: f.write("\n".join(list(set(failed_list))))
             f.write(f"\n\n# Failed Nodes Count: {len(failed_list)}\n# Log: {now.strftime('%Y-%m-%d %H:%M:%S')}")
             
+        # Подписка на ошибки в Base64
         with open("sub_failed.txt", 'w', encoding='utf-8') as f:
             f.write(encode_base64("\n".join(list(set(failed_list)))))
     except: pass
 
-def git_auto_update_and_push():
-    """Автообновление перед стартом и Пуш после окончания."""
-    print("\n[Git] Синхронизация с GitHub...", flush=True)
+def git_commit_push():
+    """Встроенная отправка в GitHub."""
+    print("\n[Git] Отправка обновлений в репозиторий...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
         
-        # Автообновление (на случай, если all_sources.txt был изменен)
+        # Загрузка изменений с сервера, чтобы избежать конфликтов при пуше
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
         
         subprocess.run(["git", "add", "*.txt"], check=True)
         if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-            print("[Git] Нет изменений для отправки.")
+            print("[Git] Нет изменений для коммита.")
             return
             
         msg = f"Ultra-Update {datetime.now().strftime('%d/%m %H:%M')} | Auto-Sync Mode"
         subprocess.run(["git", "commit", "-m", msg], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)
-        print("[Git] Изменения успешно отправлены!")
+        print("[Git] Успешно отправлено!")
     except Exception as e:
-        print(f"[Git] Ошибка синхронизации: {e}")
+        print(f"[Git] Ошибка при пуше: {e}")
 
 # --- ФУНКЦИИ ВОРКЕРЫ ---
 
@@ -355,8 +379,10 @@ def check_worker(config, blacklist, db_now, known_nodes, lock, seen):
     else:
         return ("FAIL", nid, config)
 
+# --- ГЛАВНЫЙ ДВИЖОК ---
+
 def process_monster_engine():
-    """Главный двигатель парсера (Один цикл)."""
+    """Главный двигатель парсера."""
     start_time = datetime.now()
     print(f"\n{'='*50}\n🚀 MONSTER ENGINE ULTIMATE СТАРТ: {start_time.strftime('%H:%M:%S')}\n{'='*50}", flush=True)
     
@@ -372,7 +398,7 @@ def process_monster_engine():
     raw_configs = []
     
     # 1. Жесткий парсинг источников (Сбор данных)
-    print(f"📡 Сбор данных из {len(sources)} источников (Vless/Vmess/Trojan/SS/Hysteria2/Tuic)...", flush=True)
+    print(f"📡 Сбор данных из {len(sources)} источников (Только нужные протоколы)...", flush=True)
     for url in sources:
         if SHOULD_EXIT: break
         try:
@@ -382,6 +408,7 @@ def process_monster_engine():
             r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
             text = r.text
             
+            # Декодирование, если источник в Base64
             if not any(p in text for p in ALLOWED_PROTOCOLS):
                 decoded = decode_base64(text)
                 if decoded: text = decoded
@@ -404,7 +431,7 @@ def process_monster_engine():
     global_seen = set()
     seen_lock = threading.Lock()
     
-    print(f"⚡ Проверка доступности портов в {THREAD_COUNT} потоков...", flush=True)
+    print(f"⚡ Проверка доступности портов в {THREAD_COUNT} потоков (Таймаут {PORT_TIMEOUT}с)...", flush=True)
     with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
         futures = [executor.submit(check_worker, c, blacklist, db_now, known_nodes, seen_lock, global_seen) for c in raw_configs]
         for future in as_completed(futures):
@@ -419,10 +446,13 @@ def process_monster_engine():
                         valid_new.append(res)
             except: continue
 
+    print(f"✅ Найдено ЖИВЫХ новых узлов: {len(valid_new)}")
+
     # 3. Строгое GeoIP Распределение
     random.shuffle(valid_new)
     queue = valid_new[:GEOIP_LIMIT_PER_RUN]
     structured_data = {c: [] for c in COUNTRIES}
+    final_mix_list = []
     
     print(f"🌍 Турбо-GeoIP (x{GEOIP_PARALLEL_LEVEL}) для {len(queue)} живых узлов...", flush=True)
     for cfg in queue:
@@ -430,42 +460,35 @@ def process_monster_engine():
         host, _ = get_server_info(cfg)
         code = check_ip_location_smart(host)
         
-        if code:
-            matched = False
+        matched = False
+        if code and code != "UN":
             for c_name, c_info in COUNTRIES.items():
                 if code in [c_info["code"], c_info.get("alt_code"), c_info.get("extra")]:
-                    structured_data[c_name].append(cfg)
+                    beauty_cfg = beautify_config(cfg, c_name)
+                    structured_data[c_name].append(beauty_cfg)
+                    final_mix_list.append(beauty_cfg)
                     matched = True
                     break
-            if not matched: failed_new.append(cfg) # Страна не совпала со словарем
-        else:
-            failed_new.append(cfg) # IP не определился
+                    
+        # ИСПРАВЛЕНИЕ ОШИБКИ: Сохраняем ЛЮБЫЕ рабочие конфиги, даже если страны нет в словаре
+        if not matched:
+            beauty_cfg = beautify_config(cfg, None, fallback_code=code)
+            final_mix_list.append(beauty_cfg)
             
     # 4. Авто-Удаление старья, Сохранение и Синхронизация
-    save_and_organize(structured_data, failed_new)
+    print("💾 Слияние со старой базой и АВТО-УДАЛЕНИЕ мертвых узлов...", flush=True)
+    save_and_organize(structured_data, final_mix_list, failed_new)
     save_blacklist(blacklist)
-    git_auto_update_and_push()
+    
+    # 5. Git Commit & Push
+    git_commit_push()
     
     end_time = datetime.now()
     print(f"\n✅ ЦИКЛ ЗАВЕРШЕН ЗА {end_time - start_time}", flush=True)
 
-# --- АВТОМАТИЧЕСКИЙ БЕСКОНЕЧНЫЙ ЗАПУСК ---
 if __name__ == "__main__":
-    print(f"🚀 Скрипт запущен в режиме АВТО-ОБНОВЛЕНИЯ. Интервал: {RUN_INTERVAL_MINUTES} минут.")
     try:
-        while not SHOULD_EXIT:
-            process_monster_engine()
-            
-            if SHOULD_EXIT: break
-            
-            # Таймер ожидания до следующего запуска
-            print(f"\n⏳ Ожидание {RUN_INTERVAL_MINUTES} минут до следующего обновления...")
-            for i in range(RUN_INTERVAL_MINUTES * 60, 0, -1):
-                if SHOULD_EXIT: break
-                time.sleep(1)
-                
-    except KeyboardInterrupt:
-        print("\n[!] Программа остановлена вручную.")
+        process_monster_engine()
     except Exception as fatal_error:
         print(f"\n[КРИТИЧЕСКАЯ ОШИБКА]: {fatal_error}")
         sys.exit(1)
