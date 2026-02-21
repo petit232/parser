@@ -65,18 +65,24 @@ class MonsterParser:
         self.semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
 
     def load_state(self):
+        """Загрузка состояния с гарантированными полями по умолчанию"""
+        default_state = {"last_index": 0, "processed_total": 0, "history": []}
         if os.path.exists(STATE_FILE):
             try:
                 with open(STATE_FILE, 'r') as f:
-                    return json.load(f)
-            except Exception: pass
-        return {"last_index": 0, "processed_total": 0, "history": []}
+                    data = json.load(f)
+                    # Объединяем дефолт и загруженные данные, чтобы не было KeyError
+                    return {**default_state, **data}
+            except Exception as e:
+                logger.warning(f"Failed to load state, using defaults: {e}")
+        return default_state
 
     def save_state(self):
         try:
             with open(STATE_FILE, 'w') as f:
                 json.dump(self.state, f, indent=4)
-        except Exception: pass
+        except Exception as e:
+            logger.error(f"Failed to save state: {e}")
 
     def get_host_port(self, link):
         """Извлекает хост и порт из прокси-ссылки"""
@@ -98,7 +104,7 @@ class MonsterParser:
         async with self.semaphore:
             start_time = time.time()
             try:
-                # DNS Резолвинг в отдельном потоке (чтобы не блокировать asyncio)
+                # DNS Резолвинг в отдельном потоке
                 ip_addr = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(None, socket.gethostbyname, host),
                     timeout=TIMEOUT
@@ -133,7 +139,6 @@ class MonsterParser:
             if not parsed.scheme or (not parsed.netloc and '@' not in link): return link
             query = parse_qs(parsed.query)
             
-            # Не трогаем Reality, они и так работают
             if 'reality' in str(query.get('security', [])).lower(): return link
             
             if parsed.scheme in ['vless', 'vmess', 'trojan']:
@@ -155,9 +160,12 @@ class MonsterParser:
                 logger.warning(f"Process already running (Age: {int(lock_age)}s). Aborting.")
                 return
             else:
-                os.remove(LOCK_FILE)
+                logger.info(f"Stale lock found (Age: {int(lock_age)}s). Cleaning up.")
+                try: os.remove(LOCK_FILE)
+                except: pass
         
         try:
+            # Создаем лок-файл
             with open(LOCK_FILE, 'w') as f: f.write(str(time.time()))
 
             if not os.path.exists(SOURCE_FILE):
@@ -170,16 +178,17 @@ class MonsterParser:
             
             links = list(dict.fromkeys(links))
             total_count = len(links)
+            if total_count == 0:
+                logger.warning("All sources file is empty.")
+                return
             
             # 2. Динамический расчет размера батча (3-часовой цикл)
             runs_per_cycle = (CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN
             batch_size = max(500, int(total_count / runs_per_cycle))
             
             # 3. Умная приоритезация
-            # Сначала проверяем BY, KZ и те, что содержат приоритетные регионы в ссылке
             links.sort(key=lambda x: any(p in x.upper() for p in PRIORITY_REGIONS), reverse=True)
             
-            # Определяем диапазон для текущего прогона
             start_idx = self.state.get("last_index", 0)
             if start_idx >= total_count: start_idx = 0
             end_idx = min(start_idx + batch_size, total_count)
@@ -187,7 +196,6 @@ class MonsterParser:
             current_batch = links[start_idx:end_idx]
 
             logger.info(f"📊 Engine Stats: Total Links={total_count}, Current Batch={len(current_batch)}")
-            logger.info(f"🎯 Cycle Target: Complete update every {CYCLE_HOURS} hours")
             
             ip_cache = {}
             results = []
@@ -204,60 +212,53 @@ class MonsterParser:
                 for idx, (ip, ping) in enumerate(checked_data):
                     link = current_batch[idx]
                     country = self.get_country(ip) if ip else None
-                    
-                    # Получаем лимит пинга для страны (или дефолт 200)
                     limit = PING_LIMITS.get(country, PING_LIMITS['DEFAULT'])
                     
                     if ip and ping <= limit:
                         results.append({
                             "link": self.wrap_for_russia(link),
                             "country": country,
-                            "ping": ping,
-                            "score": 1000 if country in PRIORITY_REGIONS else 0
+                            "ping": ping
                         })
                     else:
-                        # Если не ответил или пинг > лимита — в бан
                         dead_links.add(link)
 
-            # 4. Атомарное обновление файлов по странам
+            # 4. Обновление файлов по странам
             for filename in set(COUNTRY_MAP.values()) | {DEFAULT_MIX}:
                 current_nodes = {}
-                # Читаем старые, если они не мертвы
                 if os.path.exists(filename):
                     with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
                             node = l.strip()
                             if node and node not in dead_links: current_nodes[node] = True
                 
-                # Добавляем новые живые
                 for res in results:
                     if COUNTRY_MAP.get(res['country'], DEFAULT_MIX) == filename:
                         current_nodes[res['link']] = True
                 
-                # Сохраняем топ-500
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write('\n'.join(list(current_nodes.keys())[:MAX_NODES_PER_COUNTRY]) + '\n')
 
-            # 5. Глобальная чистка мастер-базы (all_sources.txt)
-            # Убираем все мертвые ссылки навсегда
+            # 5. Глобальная чистка мастер-базы
             remaining_master = [l for l in links if l not in dead_links]
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(remaining_master) + '\n')
 
-            # Сохраняем прогресс
+            # Сохраняем прогресс (используем безопасную инкрементацию)
             self.state["last_index"] = end_idx if end_idx < total_count else 0
-            self.state["processed_total"] += len(current_batch)
+            self.state["processed_total"] = self.state.get("processed_total", 0) + len(current_batch)
             self.state["last_run_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.save_state()
             
             logger.info(f"✅ Batch Completed. Live: {len(results)}, Removed: {len(dead_links)}")
-            logger.info(f"📍 Next check will start from index: {self.state['last_index']}")
 
         except Exception as e:
             logger.critical(f"FATAL ERROR: {e}", exc_info=True)
         finally:
+            # Всегда удаляем лок-файл при завершении
             if os.path.exists(LOCK_FILE):
-                os.remove(LOCK_FILE)
+                try: os.remove(LOCK_FILE)
+                except: pass
 
 if __name__ == "__main__":
     parser = MonsterParser()
