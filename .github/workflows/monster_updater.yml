@@ -39,7 +39,7 @@ jobs:
 
       - name: 🚀 Run Monster Parser
         run: |
-          mkdir -p "прокси"
+          mkdir -p "proxy"
           python parser.py
 
       - name: 💾 Save Changes
