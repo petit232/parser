@@ -101,9 +101,12 @@ class MonsterParser:
         self.mandatory_files = set(COUNTRY_MAP.values()) | {DEFAULT_MIX, INVALID_FILE}
 
     def ensure_structure(self):
-        """Создает структуру папок и базовые файлы."""
-        os.makedirs(DB_DIR, exist_ok=True)
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        """Проверяет наличие папок и создает их только при необходимости."""
+        if not os.path.exists(DB_DIR):
+            os.makedirs(DB_DIR, exist_ok=True)
+        if not os.path.exists(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            
         if not os.path.exists(SOURCE_FILE):
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write("# Monster Engine Source List\n")
@@ -127,12 +130,14 @@ class MonsterParser:
 
     def init_geo(self):
         """Инициализация базы GeoIP2."""
-        if os.path.exists(GEOIP_DB):
-            try:
-                return geoip2.database.Reader(GEOIP_DB)
-            except Exception as e:
-                logger.error(f"GeoIP Error: {e}")
-        return None
+        if not os.path.exists(GEOIP_DB):
+            logger.warning(f"GeoIP Database not found at {GEOIP_DB}. Sorting by countries will be limited.")
+            return None
+        try:
+            return geoip2.database.Reader(GEOIP_DB)
+        except Exception as e:
+            logger.error(f"GeoIP Error: {e}")
+            return None
 
     def load_state(self):
         """Загрузка состояния парсера."""
