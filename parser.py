@@ -33,8 +33,8 @@ COUNTRIES = {
     "france": {"flag": "🇫🇷", "code": "FR", "name": "France"}
 }
 
-# Поддерживаемые протоколы
-PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
+# Поддерживаемые протоколы (Только те, что эффективны и нужны по запросу)
+ALLOWED_PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://"]
 
 # Глобальное состояние
 IP_CACHE = {} 
@@ -53,7 +53,7 @@ GEOIP_PARALLEL_LEVEL = 5    # Сколько API опрашивать ОДНОВ
 def signal_handler(sig, frame):
     """Корректный выход при прерывании."""
     global SHOULD_EXIT
-    print("\n[!] Остановка процесса пользователем...", flush=True)
+    print("\n[!] Stopping by user request...", flush=True)
     SHOULD_EXIT = True
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -222,29 +222,33 @@ def check_ip_location_smart(host):
     providers = [api_01, api_02, api_03, api_04, api_05, api_06, api_07, api_08, api_09, api_10]
     random.shuffle(providers)
 
-    # Параллельный опрос пачки API
+    # Параллельный опрос пачки API (Пять хищников одновременно)
     with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as api_executor:
         future_to_api = {api_executor.submit(p, host): p for p in providers[:GEOIP_PARALLEL_LEVEL]}
         for future in as_completed(future_to_api):
             if SHOULD_EXIT: break
-            code = future.result()
+            try:
+                code = future.result()
+                if code and len(str(code)) == 2:
+                    code = str(code).upper()
+                    with CACHE_LOCK:
+                        IP_CACHE[host] = code
+                        PROCESSED_COUNT += 1
+                    return code
+            except: continue
+
+    # Фолбэк на остальные API если первая пачка не дала результат
+    for provider in providers[GEOIP_PARALLEL_LEVEL:]:
+        if SHOULD_EXIT: break
+        try:
+            code = provider(host)
             if code and len(str(code)) == 2:
                 code = str(code).upper()
                 with CACHE_LOCK:
                     IP_CACHE[host] = code
                     PROCESSED_COUNT += 1
                 return code
-
-    # Фолбэк на оставшиеся API если первая пачка не дала результат
-    for provider in providers[GEOIP_PARALLEL_LEVEL:]:
-        if SHOULD_EXIT: break
-        code = provider(host)
-        if code and len(str(code)) == 2:
-            code = str(code).upper()
-            with CACHE_LOCK:
-                IP_CACHE[host] = code
-                PROCESSED_COUNT += 1
-            return code
+        except: continue
 
     with CACHE_LOCK: IP_CACHE[host] = None
     return None
@@ -348,19 +352,19 @@ def save_and_organize(structured, failed_list):
 
 def git_commit_push():
     """Автоматическая отправка в GitHub."""
-    print("\n[Git] Отправка обновлений в репозиторий...", flush=True)
+    print("\n[Git] Sending updates to repository...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
         subprocess.run(["git", "add", "*.txt"], check=True)
         if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
-            print("[Git] Нет изменений для коммита.")
+            print("[Git] No changes detected.")
             return
         msg = f"Ultra-Update {datetime.now().strftime('%d/%m %H:%M')} | Speed Mode"
         subprocess.run(["git", "commit", "-m", msg], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)
     except Exception as e:
-        print(f"[Git] Ошибка при пуше: {e}")
+        print(f"[Git] Push error: {e}")
 
 # --- ФУНКЦИИ ВОРКЕРЫ (ПОТОКИ) ---
 
@@ -388,7 +392,7 @@ def process_monster_engine():
     print(f"--- MONSTER ENGINE ULTIMATE START: {start_time.strftime('%H:%M:%S')} ---", flush=True)
     
     if not os.path.exists('all_sources.txt'):
-        print("[!] Файл all_sources.txt не найден!")
+        print("[!] File all_sources.txt not found!")
         return
 
     with open('all_sources.txt', 'r', encoding='utf-8') as f:
@@ -398,27 +402,26 @@ def process_monster_engine():
     db_now, known_nodes = load_current_database()
     raw_configs = []
     
-    # 1. Сбор ссылок со всех источников
-    print(f"Сбор данных из {len(sources)} источников...", flush=True)
+    # 1. Сбор ссылок со всех источников (ФИЛЬТРАЦИЯ НА СТАРТЕ)
+    print(f"Collecting data from {len(sources)} sources (Vless/Vmess/Trojan/SS only)...", flush=True)
     for url in sources:
         if SHOULD_EXIT: break
         try:
-            # Не парсим свои же файлы
             if any(x in url for x in ["sub_monster.txt", "mix.txt", "failed_nodes.txt", "sub_failed.txt"]):
                 continue
             r = requests.get(url, timeout=12, headers={'User-Agent': get_random_ua()})
             text = r.text
-            # Авто-декодирование если источник в base64
-            if not any(p in text for p in PROTOCOLS):
+            if not any(p in text for p in ALLOWED_PROTOCOLS):
                 decoded = decode_base64(text)
                 if decoded: text = decoded
             
-            # Извлекаем все подходящие ссылки
-            found = re.findall(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', text)
+            # Извлекаем только разрешенные протоколы
+            regex_pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
+            found = re.findall(regex_pattern, text)
             raw_configs.extend(found)
             gc.collect()
         except:
-            print(f"[-] Пропуск битого источника: {url}")
+            print(f"[-] Skipping source: {url}")
 
     # 2. Массовая проверка портов (Multi-threading)
     valid_new = []
@@ -426,26 +429,27 @@ def process_monster_engine():
     global_seen = set()
     seen_lock = threading.Lock()
     
-    print(f"Проверка {len(raw_configs)} узлов на порт в {THREAD_COUNT} потоков...", flush=True)
+    print(f"Checking {len(raw_configs)} nodes on port using {THREAD_COUNT} threads...", flush=True)
     with ThreadPoolExecutor(max_workers=THREAD_COUNT) as executor:
         futures = [executor.submit(check_worker, c, blacklist, db_now, known_nodes, seen_lock, global_seen) for c in raw_configs]
         for future in as_completed(futures):
             if SHOULD_EXIT: break
-            res = future.result()
-            if res:
-                if isinstance(res, tuple): # Это фейл
-                    blacklist[res[1]] = datetime.now()
-                    failed_new.append(res[2])
-                else:
-                    valid_new.append(res)
+            try:
+                res = future.result()
+                if res:
+                    if isinstance(res, tuple): # FAIL
+                        blacklist[res[1]] = datetime.now()
+                        failed_new.append(res[2])
+                    else:
+                        valid_new.append(res)
+            except: continue
 
-    # 3. GeoIP Распределение (Turbo)
+    # 3. GeoIP Распределение (Turbo Parallel)
     random.shuffle(valid_new)
-    # Берем пачку самых свежих
     queue = valid_new[:GEOIP_LIMIT_PER_RUN]
     structured_data = {c: [] for c in COUNTRIES}
     
-    print(f"Параллельный GeoIP (x{GEOIP_PARALLEL_LEVEL}) для {len(queue)} узлов...", flush=True)
+    print(f"Parallel GeoIP (x{GEOIP_PARALLEL_LEVEL}) for {len(queue)} nodes...", flush=True)
     for cfg in queue:
         if SHOULD_EXIT: break
         host, _ = get_server_info(cfg)
@@ -457,9 +461,9 @@ def process_monster_engine():
                     structured_data[c_name].append(cfg)
                     matched = True
                     break
-            if not matched: failed_new.append(cfg) # Страна не в нашем списке
+            if not matched: failed_new.append(cfg) 
         else:
-            failed_new.append(cfg) # Вообще не определился
+            failed_new.append(cfg) 
             
     # 4. Сохранение результатов и пуш
     save_and_organize(structured_data, failed_new)
@@ -467,11 +471,11 @@ def process_monster_engine():
     git_commit_push()
     
     end_time = datetime.now()
-    print(f"--- ЦИКЛ ЗАВЕРШЕН ЗА {end_time - start_time} ---", flush=True)
+    print(f"--- CYCLE COMPLETED IN {end_time - start_time} ---", flush=True)
 
 if __name__ == "__main__":
     try:
         process_monster_engine()
     except Exception as fatal_error:
-        print(f"\n[КРИТИЧЕСКАЯ ОШИБКА]: {fatal_error}")
+        print(f"\n[FATAL ERROR]: {fatal_error}")
         sys.exit(1)
