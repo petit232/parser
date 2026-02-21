@@ -1,42 +1,54 @@
 🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ
-Обновлено: 21/02/2026 20:08:45
+Обновлено: 21/02/2026 20:12:23
 ------------------------------------------
 
-📍 MIX (291 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/mix.txt
+📍 MIX (347 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/mix.txt
 
-📍 USA (61 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/usa.txt
+📍 USA (106 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/usa.txt
 
-📍 NETHERLANDS (23 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/netherlands.txt
+📍 NETHERLANDS (32 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/netherlands.txt
 
-📍 GERMANY (21 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/germany.txt
+📍 GERMANY (25 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/germany.txt
 
-📍 SWEDEN (9 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/sweden.txt
+📍 SWEDEN (11 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/sweden.txt
 
-📍 FRANCE (7 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/france.txt
+📍 FRANCE (8 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/france.txt
 
-📍 UK (6 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/uk.txt
+📍 RUSSIA (8 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/russia.txt
 
-📍 RUSSIA (4 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/russia.txt
+📍 UK (7 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/uk.txt
+
+📍 KAZAKHSTAN (5 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/kazakhstan.txt
 
 📍 FINLAND (3 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/finland.txt
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/finland.txt
 
-📍 KAZAKHSTAN (3 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/kazakhstan.txt
+📍 SWITZERLAND (3 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/switzerland.txt
+
+📍 SINGAPORE (2 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/singapore.txt
+
+📍 LITHUANIA (2 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/lithuania.txt
 
 📍 LATVIA (2 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/latvia.txt
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/latvia.txt
+
+📍 HONGKONG (1 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/hongkong.txt
 
 📍 POLAND (1 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/poland.txt
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/poland.txt
 
-📍 SWITZERLAND (1 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/прокси/switzerland.txt
+📍 ESTONIA (1 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/estonia.txt
