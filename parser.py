@@ -8,6 +8,7 @@ import socket
 import geoip2.database
 import logging
 import base64
+import subprocess
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -95,7 +96,6 @@ class MonsterParser:
     def decode_content(self, content):
         """Декодирует Base64 содержимое подписок или возвращает текст как есть"""
         try:
-            # Пытаемся декодировать как Base64
             decoded = base64.b64decode(content).decode('utf-8', errors='ignore')
             if '://' in decoded:
                 return decoded
@@ -110,9 +110,6 @@ class MonsterParser:
                 if response.status == 200:
                     raw_text = await response.text()
                     decoded_text = self.decode_content(raw_text.strip())
-                    found = self.proxy_pattern.findall(decoded_text)
-                    # findall вернет список протоколов, нам нужны полные ссылки
-                    # Используем finditer для получения полных совпадений
                     return [m.group(0) for m in self.proxy_pattern.finditer(decoded_text)]
         except Exception as e:
             logger.error(f"Failed to fetch sub {url}: {e}")
@@ -171,6 +168,42 @@ class MonsterParser:
             return link
         except Exception: return link
 
+    def update_links_for_clients(self, files_stats):
+        """Создает файл со ссылками для клиентов на основе обновленных файлов"""
+        try:
+            # Пытаемся получить URL репозитория для формирования RAW ссылок
+            repo_url = ""
+            try:
+                remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).decode().strip()
+                if "github.com" in remote:
+                    # Превращаем git@github.com:user/repo.git или https://github.com/user/repo.git
+                    # в https://raw.githubusercontent.com/user/repo/main/
+                    path = remote.replace("git@github.com:", "").replace("https://github.com/", "").replace(".git", "")
+                    repo_url = f"https://raw.githubusercontent.com/{path}/main"
+            except:
+                logger.warning("Could not determine git remote URL, using placeholders.")
+                repo_url = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main"
+
+            content = [
+                "🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ",
+                f"Обновлено: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+                "------------------------------------------",
+                ""
+            ]
+
+            for filename, count in files_stats.items():
+                if count > 0:
+                    display_name = filename.replace(".txt", "").capitalize()
+                    content.append(f"📍 {display_name} ({count} nodes):")
+                    content.append(f"{repo_url}/{filename}")
+                    content.append("")
+
+            with open(LINKS_INFO_FILE, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(content))
+            logger.info(f"✅ {LINKS_INFO_FILE} updated.")
+        except Exception as e:
+            logger.error(f"Failed to update client links file: {e}")
+
     async def run(self):
         if os.path.exists(LOCK_FILE):
             lock_age = time.time() - os.path.getmtime(LOCK_FILE)
@@ -188,12 +221,10 @@ class MonsterParser:
                 logger.error("Source file missing!")
                 return
 
-            # 1. Читаем сырые источники и разделяем их
             with open(SOURCE_FILE, 'r', encoding='utf-8', errors='ignore') as f:
                 raw_entries = [l.strip() for l in f if len(l.strip()) > 5]
             
             raw_entries = list(dict.fromkeys(raw_entries))
-            
             subscriptions = []
             direct_configs = []
             
@@ -201,13 +232,11 @@ class MonsterParser:
                 if entry.startswith('http'):
                     subscriptions.append(entry)
                 else:
-                    # Извлекаем ссылки из текста, даже если там кавычки
                     found = [m.group(0) for m in self.proxy_pattern.finditer(entry)]
                     direct_configs.extend(found)
 
-            # 2. Распаковка подписок
             all_expanded_links = direct_configs
-            logger.info(f"🌐 Fetching {len(subscriptions)} subscriptions...")
+            logger.info(f"🌐 Processing sources: {len(subscriptions)} subs, {len(direct_configs)} direct configs")
             
             async with aiohttp.ClientSession() as session:
                 sub_tasks = [self.fetch_subscription(session, url) for url in subscriptions]
@@ -215,19 +244,18 @@ class MonsterParser:
                 for sub_links in sub_results:
                     all_expanded_links.extend(sub_links)
 
-                # Убираем дубликаты после распаковки
+                initial_count = len(all_expanded_links)
                 all_expanded_links = list(dict.fromkeys(all_expanded_links))
+                duplicates_removed = initial_count - len(all_expanded_links)
                 total_count = len(all_expanded_links)
                 
                 if total_count == 0:
                     logger.warning("No links found in any source.")
                     return
 
-                # 3. Батчинг
                 runs_per_cycle = (CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN
                 batch_size = max(500, int(total_count / runs_per_cycle))
                 
-                # Приоритезация
                 all_expanded_links.sort(key=lambda x: any(p in x.upper() for p in PRIORITY_REGIONS), reverse=True)
                 
                 start_idx = self.state.get("last_index", 0)
@@ -241,7 +269,6 @@ class MonsterParser:
                 results = []
                 dead_links = set()
                 
-                # 4. Проверка нод
                 tasks = []
                 for link in current_batch:
                     h, p = self.get_host_port(link)
@@ -265,7 +292,7 @@ class MonsterParser:
 
             # 5. Обновление файлов по странам
             files_updated_stats = {}
-            for filename in set(COUNTRY_MAP.values()) | {DEFAULT_MIX}:
+            for filename in sorted(set(COUNTRY_MAP.values()) | {DEFAULT_MIX}):
                 current_nodes = {}
                 if os.path.exists(filename):
                     with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
@@ -284,9 +311,10 @@ class MonsterParser:
                     f.write('\n'.join(nodes_to_save) + '\n')
                 files_updated_stats[filename] = len(nodes_to_save)
 
-            # 6. Глобальная чистка мастер-базы
-            # Мы удаляем только те "прямые" конфиги, которые сдохли.
-            # Ссылки на подписки (http) мы не трогаем, так как они - вечные источники.
+            # 6. Обновление LINKS_FOR_CLIENTS.txt
+            self.update_links_for_clients(files_updated_stats)
+
+            # 7. Глобальная чистка мастер-базы
             final_sources = []
             for entry in raw_entries:
                 if entry.startswith('http'):
@@ -308,9 +336,9 @@ class MonsterParser:
             print(f"🚀 MONSTER ENGINE REPORT | {self.state['last_run_time']}")
             print("="*50)
             print(f"📦 Sources: {len(subscriptions)} subs, {len(direct_configs)} direct")
-            print(f"🔍 Total nodes found: {total_count}")
+            print(f"🔍 Total unique nodes: {total_count}")
             print(f"✅ Live in batch: {len(results)} | 💀 Dead: {len(dead_links)}")
-            print(f"📈 Active in files: {sum(files_updated_stats.values())}")
+            print(f"📈 Total Active: {sum(files_updated_stats.values())}")
             print("="*50 + "\n")
 
         except Exception as e:
