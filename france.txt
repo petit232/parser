@@ -52,6 +52,7 @@ vless://9b180104-1bdc-4026-add8-b74f4b3bc761@paris.fonixapp.org:35338?security=r
 vless://9ca55f43-ef86-432c-9170-75e7457af089@fr.spirako.com:443?security=reality&type=tcp&headerType=&flow=xtls-rprx-vision&path=🔒
 vless://a114d067-b900-4f60-87a5-50d4d63972b8@104.18.3.150:443?encryption=none&type=ws&host=PaRiSA-CC5Zk0.paRISa-44c.woRKeRs.dev&path=%2F%3Fed%3D2560&security=tls&fp=chrome&sni=PaRiSA-CC5Zk0.paRISa-44c.woRKeRs.dev
 vless://a1fd898b-326a-49eb-b28a-60a600736a98@parsdata.france-learns.ir:42545?security=none&encryption=none&host=soft98.ir&headerType=http&type=tcp
+vless://a4d36ed2-6256-4550-923a-fa058933aeb1@poli.appleseraj.ir:443?path=%2F%3Fed%3D2048&security=tls&encryption=none&insecure=1&host=france.mastermarly.ir&type=ws&allowInsecure=1&sni=france.mastermarly.ir
 vless://a5922b61-09c2-4f13-87f6-b5c83244c6ee@SC-France2.09vpn.com:8443?path=/vless/&security=tls&encryption=none&type=ws
 vless://b5920b52-504c-4835-978c-fbc4110d5840@72.61.161.219:80?path=%2Fvless&security=none&encryption=none&host=france-paris.hostinger.kcartik-vps.com&type=ws
 vless://b5920b52-504c-4835-978c-fbc4110d5840@france-paris.hostinger.kcartik-vps.com:443/?type=ws&encryption=none&flow=&host=france-paris.hostinger.kcartik-vps.com&path=%2Fvless&security=tls&sni=france-paris.hostinger.kcartik-vps.com
@@ -61,7 +62,7 @@ vless://be72cd92-92d2-4543-9bef-1673fcd03b45@fr.nextseesion.ir:35789?security=&e
 vless://bf1b5b3a-cac2-4e2a-bb8e-01d7c62bcd62@france.freewire.blog:443?security=reality&encryption=none&pbk=YLSRUKO-sm6In4ckqgVjagHKrWcA5r2aV7khO5brOUQ&headerType=none&fp=chrome&spx=/SeyyedMT&type=tcp&sni=🔒
 vless://e02208b6-2626-49ef-8b93-0d80ed33f4ac@104.31.16.98:80/?type=ws&encryption=none&host=server-j377d.xbox.blackops1.heydasfrance.name.ng&path=🔒
 vless://e09213cf-9436-4d12-b098-ce4009c9abc9@fr.safeline.12.afterhav.ir:443?security=reality&encryption=none&pbk=4tDme1uoXqFrpHyDr2FdYQfpbYl3s19L6HeIZQW-fjA&headerType=none&fp=chrome&spx=/dncADOY6aeSOSsa&type=tcp&sni=🔒
-vless://e59083aa-d933-4952-8cf0-eec74f718705@fr.locations-service.com:3032?security=reality&encryption=none&pbk=21V_VkMUD2XRbyRDg7hjpblUAwxHvlLmbarATdhhJQI&headerType=none&fp=firefox&type=tcp&sni=refersion.com
+vless://e59083aa-d933-4952-8cf0-eec74f718705@fr.locations-service.com:3032?fp=chrome&pbk=21V_VkMUD2XRbyRDg7hjpblUAwxHvlLmbarATdhhJQI&security=tls&sni=refersion.com
 vless://e65a5cbc-5663-4f7d-ad7d-800e86ba487d@194.76.18.25:443?security=tls&sni=rAyAn-cOnFiG-fr-1.pArSa.dPdNs.oRg&allowInsecure=1&fp=chrome&type=ws&path=/ws&host=rAyAn-cOnFiG-fr-1.pArSa.dPdNs.oRg&encryption=none
 vless://ea6b03ef-8356-4a8c-abe4-eade7a4806e4@sc-france2.09vpn.com:80?encryption=none&security=none&type=ws&path=/vless/
 vless://ea6b03ef-8356-4a8c-abe4-eade7a4806e4@sc-france2.09vpn.com:8443?encryption=none&type=ws&path=/vless/&security=tls
@@ -72,4 +73,4 @@ vless://f31a62f3-1b55-4f3d-aa22-17bcf4efa0d1@sohol.fitspor.top:2087?encryption=n
 vless://f6fa8cbd-6f5a-4a2c-8a28-9a1e6f48bdd6@fr.pixvpn.app:8443?mode=gun&security=reality&encryption=none&pbk=SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc&fp=chrome&type=grpc&serviceName=grpc-jd&sni=🔒
 vless://turboo-server@fr.turboo-server.xyz:443?security=none&amp%3Bencryption=none&amp%3Bhost=bmw.com&amp%3BheaderType=http&amp%3Btype=tcp
 
-# Last Update: 2026-02-21 09:21:06
+# Last Update: 2026-02-21 09:23:35

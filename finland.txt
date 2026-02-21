@@ -1,7 +1,7 @@
 ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpOUVJDaC1xbTExR0g5TWFSV1g5TmRtU2RXYUdSaEZlUw@fi.appav.online:5228?
 trojan://I864rxBP9tLYy6OdZ_3SrQ@149.5.172.218:995?security=tls&sni=pubtlx.pqmin.online&fp=random&type=ws&path=/twcdn-warp&host=fi.pqmin.online
 trojan://WG25eyyq5F@Finland.silenceux.ir:2087?path=/Telegram-@ATLAS_V2VPN/?ed=2570&security=tls&insecure=0&host=dbssxrx3df6f.contigolibre.com&type=ws&allowInsecure=0&sni=dbssxrx3df6f.contigolibre.com
-vless://005db34d-76e3-2c87-77d6-3e9f786740a6@fi.zeepo.ir:443?security=reality&encryption=none&pbk=KkGxnE3A4EaG8C7JydHk46UMuCP-Hcpua6lna-TvIAI&headerType=none&fp=firefox&type=tcp&flow=xtls-rprx-vision&sni=refersion.com&sid=eae3d03b0083f7af
+vless://005db34d-76e3-2c87-77d6-3e9f786740a6@fi.zeepo.ir:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=refersion.com&fp=firefox&security=reality&pbk=KkGxnE3A4EaG8C7JydHk46UMuCP-Hcpua6lna-TvIAI&sid=eae3d03b0083f7af
 vless://0d93b787-b66b-4696-a036-a0f549764f69@196.196.203.90:443?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=F294G-iRQHISvxNNtUtF2arP3d6pzigwfVcY2jqXcSc&security=reality&sid=2a8a7bb6036e8461&sni=fi.fasti.win&type=tcp
 vless://0d93b787-b66b-4696-a036-a0f549764f69@196.244.194.114:443?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=F294G-iRQHISvxNNtUtF2arP3d6pzigwfVcY2jqXcSc&security=reality&sid=2a8a7bb6036e8461&sni=fi.fasti.win&type=tcp
 vless://0d93b787-b66b-4696-a036-a0f549764f69@fi.fasti.win:443?type=tcp&security=reality&encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=F294G-iRQHISvxNNtUtF2arP3d6pzigwfVcY2jqXcSc&sid=2a8a7bb6036e8461&sni=fi.fasti.win
@@ -12,7 +12,6 @@ vless://34872703-64b4-4c44-aeb4-157073c4fcc3@188.114.96.3:8880?security=none&typ
 vless://36213657-e751-478b-a5d7-547eef892af9@dojman.global.ssl.fastly.net:443?path=/containers/fi&security=tls&alpn=http/1.1&encryption=none&insecure=1&host=dojman.global.ssl.fastly.net&fp=chrome&type=ws&allowInsecure=1&sni=dojman.global.ssl.fastly.net
 vless://3f719b1c-433e-4b41-95e4-837a4a6a0f9a@25.129.199.148:2052?path=%2Fspeedtest.net%2Fzirakomamle.com%3Fed%3D2048&security=none&encryption=none&host=fInLaND.ziRakOmaMle.coM&type=httpupgrade
 vless://472b07d2-31e4-41ab-ae47-48914d9b7900@104.21.33.123:443?path=/Net3rffws&security=tls&encryption=none&insecure=0&host=fi.unoix.io&fp=chrome&type=ws&allowInsecure=0&sni=fi.unoix.io
-vless://472b07d2-31e4-41ab-ae47-48914d9b7900@45.130.125.160:443?path=/Net3rffws&security=tls&encryption=none&host=fi.unoix.io&fp=chrome&type=ws&sni=fi.unoix.io
 vless://472b07d2-31e4-41ab-ae47-48914d9b7900@termux.net:443?path=%2FNet3rffws&security=tls&encryption=none&insecure=0&host=fi.unoix.io&fp=chrome&type=ws&allowInsecure=0&sni=fi.unoix.io
 vless://48c43abe-ac04-481e-85c7-5c9a85725685@25.26.27.28:2082?path=%2Fspeedtest.net%2Fzirakomamle.com%3Fed%3D2048&security=&encryption=none&host=fInLaND.ziRakOmaMle.coM&type=httpupgrade
 vless://4ee73e0b-0d09-4a06-9619-8a5d0d3d8257@mitivpndozd.global.ssl.fastly.net:443?path=/containers/fi&security=tls&alpn=http/1.1&encryption=none&insecure=0&host=mitivpndozd.global.ssl.fastly.net&fp=chrome&type=ws&allowInsecure=0&sni=mitivpndozd.global.ssl.fastly.net
@@ -40,11 +39,10 @@ vless://b91131f7-c382-4be8-9e7d-a373a3d23d77@95.217.188.144:443?security=tls&sni
 vless://b9549151-b98e-41b2-b73f-28097ed85ec1@panel-finland-1.subcenter.net:2001?type=tcp&path=/&host=zula.ir&headerType=http
 vless://c32819a3-bb1c-4e15-be00-ffcb657f8323@dl1-fi-cdn.easy-upload.org:2010?security=none&encryption=none&host=igap.net&headerType=none&type=tcp
 vless://ca2b2268-e2c4-4a78-beee-111189a861e7@fi-h2-01.com:8104?type=tcp&security=reality&encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=4gcDJumxa0bTaHvrZRL4Hb5ItXPha6ZYZ0fGmMD_k0A&sid=1afc9d750da1ba88&sni=tradingview.com
-vless://cfb4a87c-6108-4c89-a1a4-eb644dfdea03@fi-2.vpnd.io:1020?type=tcp&security=reality&encryption=none&pbk=tQP8iJn71qlfo3wM5bkW6Ic-LOF9I8j9l-6sJ3dhYWA&fp=random&sni=yahoo.com&sid=e28474253a4a&spx=%2F&flow=xtls-rprx-vision
 vless://d2de6d6d-4735-4fe3-b4b6-00a81ced69f5@fi.srv.happvpn.com:443?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=cdnjs.com&fp=chrome&security=reality&pbk=MNTWCLyV7EquFn-J0a6KRlQZ0dt6QY5mmu7Dq8uDkxw&sid=4c02bbbfa833b3b6
 vless://d38ee50c-c3d5-402f-907a-ab6ba229d774@fi.connectv.net:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=fi.connectv.net&security=reality&pbk=vegx20Xc9XIkr8nfdEB7LZnficXNURVnDbB8_ND97Dw&sid=
 vless://e5bb092c-2b3c-053c-2bf2-e674bd333ad3@static.lunamaku.ir:443?path=%2FeyJqdW5rIjoiNDBNWGY3Z0NPd0loZ2YiLCJwcm90b2NvbCI6InZsIiwibW9kZSI6InByb3h5aXAiLCJwYW5lbElQcyI6W119%3Fed%3D2048&security=tls&encryption=none&insecure=0&host=fi.weedpanel.site&type=ws&allowInsecure=0&sni=fi.weedpanel.site
 vless://f90b7a19-0b71-44b6-b95b-baab85af4d51@fi.sepshoping.de:8016?security=none&amp;encryption=none&amp;host=skyroom.online%2Cgharar.ir%2Cigap.net&amp;headerType=http&amp;type=tcp
 vless://fe10ab92c5bc4d48a563749f58e930a5@95.164.113.153:8443?encryption=none&type=xhttp&path=%2Fx&security=reality&sni=finland.fi&pbk=w5QtssSmdSWwtq06dNsFeU8o_XYZkWAxi8RjsWHNd30&sid=aabbccdd&fp=random
 
-# Last Update: 2026-02-21 09:21:06
+# Last Update: 2026-02-21 09:23:35
