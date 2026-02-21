@@ -2,4 +2,4 @@ vless://428a620b-1716-4727-af12-53db03bba6d1@kz-2.vpnd.io:55285?type=tcp&securit
 vless://71692331-5685-4a99-9798-38415877f33d@kz-5.vpnd.io:13344?type=tcp&security=reality&encryption=none&pbk=DC71RjKr16drr8gqK8QhEuCVLpkbBfUfPb9Far8Jkzo&fp=random&sni=yahoo.com&sid=e2bd9802e29deb&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B0%F0%9F%87%BF%20Kazakhstan%20%7C%20KZ%20%F0%9F%87%B0%F0%9F%87%BF%20%E2%9D%A4%EF%B8%8F
 
 # Total: 2
-# Updated: 2026-02-21 11:46:22
+# Updated: 2026-02-21 11:46:25
