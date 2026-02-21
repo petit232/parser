@@ -1,2 +1,0 @@
-# No active nodes for poland
-trojan://063bfa6d-c68f-4955-9b33-7555b95988bc@45.144.51.81:443/?type=tcp&security=tls&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B5%F0%9F%87%B1%20PL%20%7C%20TROJAN%20%7C%2096
