@@ -49,6 +49,10 @@ def process():
     all_raw_links = []
     source_file = 'all_sources.txt'
     
+    # Получаем текущую дату и время для метки обновления
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp_mark = f"\n\n# Last Update: {now}"
+
     if not os.path.exists(source_file):
         print(f"Файл {source_file} не найден. Проверьте наличие файла в корне репозитория.")
         return
@@ -65,7 +69,9 @@ def process():
         if url.startswith("http"):
             try:
                 print(f"Загрузка: {url}")
-                resp = requests.get(url, timeout=30)
+                # Добавляем User-Agent, чтобы сайты не блокировали запросы
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                resp = requests.get(url, headers=headers, timeout=30)
                 if resp.status_code == 200:
                     text = resp.text
                     # Если в тексте нет явных протоколов, пробуем Base64 декодирование
@@ -140,13 +146,15 @@ def process():
         with open(filename, 'w', encoding='utf-8') as f:
             if configs:
                 f.write("\n".join(configs))
-            else:
-                f.write("") # Файл остается пустым, если данных нет, чтобы ссылка не ломалась
+            # Добавляем скрытую метку времени, чтобы GitHub видел изменение файла
+            f.write(timestamp_mark)
 
     # Общий файл со всеми найденными уникальными серверами
     with open("mix.txt", 'w', encoding='utf-8') as f:
         if mix_data:
             f.write("\n".join(sorted(list(mix_data))))
+        # Добавляем скрытую метку времени в микс
+        f.write(timestamp_mark)
 
     print(f"Готово! Всего уникальных серверов сохранено: {len(mix_data)}")
 
