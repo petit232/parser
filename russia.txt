@@ -8,8 +8,3 @@ vless://bb193499-1cce-484b-830b-8d9519736823@by-1-tun.directly.chat:1056?type=tc
 vless://c9ef0444-0efd-40b3-bcab-0f0d68debc9e@am-1-tun.directly.chat:1054?type=tcp&security=reality&encryption=none&pbk=eMHi11LwtDxTMlR2rIPPThbOnG8QZZmTH5G3JPh3nUw&fp=random&sni=yahoo.com&sid=de64016486c9&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%7C%20RU%20%F0%9F%87%B7%F0%9F%87%BA%20%E2%9D%A4%EF%B8%8F
 vless://d5c9892f-e95a-4c6b-ae5d-2a68ab42f4e0@ch-2-tun.directly.chat:1055?type=tcp&security=reality&encryption=none&pbk=viIZ2qCNHD9N8LwnDp79pGQi2GUN2U34EILePkryoCI&fp=random&sni=amazon.com&sid=f42a1f&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%7C%20RU%20%F0%9F%87%B7%F0%9F%87%BA%20%E2%9D%A4%EF%B8%8F
 vless://e06dedb1-548a-4b3c-9233-078af02c7595@lt-1-tun.directly.chat:1024?type=tcp&security=reality&encryption=none&pbk=dOTw4-PV7F9AHY7YnOkVOCD3sOWuRC-5wPjwienMi3g&fp=random&sni=yahoo.com&sid=29acbf&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%7C%20RU%20%F0%9F%87%B7%F0%9F%87%BA%20%E2%9D%A4%EF%B8%8F
-
-# --- MONSTER MIRROR SYNC INFO ---
-# Nodes: 10
-# Time: 2026-02-21 14:29:35.479255
-# SyncID: 71af6c61
