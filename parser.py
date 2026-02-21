@@ -9,6 +9,7 @@ import geoip2.database
 import logging
 import base64
 import subprocess
+import shutil
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -20,12 +21,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MonsterEngine")
 
-# --- CONFIGURATION ---
-SOURCE_FILE = 'all_sources.txt'
-STATE_FILE = 'monster_state.json'
-GEOIP_DB = 'GeoLite2-Country.mmdb'
-LINKS_INFO_FILE = 'LINKS_FOR_CLIENTS.txt'
-LOCK_FILE = '.monster.lock'
+# --- ARCHITECTURE (Russian Folders) ---
+DB_DIR = 'база данных'
+OUTPUT_DIR = 'прокси'
+
+# Files in "база данных"
+SOURCE_FILE = 'all_sources.txt' # Остается в корне
+STATE_FILE = os.path.join(DB_DIR, 'monster_state.json')
+GEOIP_DB = os.path.join(DB_DIR, 'GeoLite2-Country.mmdb')
+LOCK_FILE = os.path.join(DB_DIR, '.monster.lock')
+
+# Files in "прокси"
+LINKS_INFO_FILE = os.path.join(OUTPUT_DIR, 'LINKS_FOR_CLIENTS.txt')
 
 # Performance constants
 TIMEOUT = 3            # Connection timeout
@@ -40,47 +47,69 @@ PING_LIMITS = {
     'BY': 200, 'KZ': 200, 'RU': 250
 }
 
-# Priority regions
-PRIORITY_REGIONS = {'BY', 'KZ', 'PL', 'DE', 'FI', 'SE', 'LT', 'LV', 'EE', 'RU'}
+# Priority regions for sorting
+PRIORITY_REGIONS = {'BY', 'KZ', 'PL', 'DE', 'FI', 'SE', 'LT', 'LV', 'EE', 'RU', 'US'}
 
+# Mapping countries to filenames inside OUTPUT_DIR
 COUNTRY_MAP = {
     'RU': 'russia.txt', 'BY': 'belarus.txt', 'FI': 'finland.txt',
     'FR': 'france.txt', 'DE': 'germany.txt', 'HK': 'hongkong.txt',
     'KZ': 'kazakhstan.txt', 'NL': 'netherlands.txt', 'PL': 'poland.txt',
     'SG': 'singapore.txt', 'SE': 'sweden.txt', 'GB': 'uk.txt', 'US': 'usa.txt',
+    'LT': 'lithuania.txt', 'LV': 'latvia.txt', 'EE': 'estonia.txt', 'CH': 'switzerland.txt'
 }
 DEFAULT_MIX = 'mix.txt'
-MAX_NODES_PER_COUNTRY = 500
+MAX_NODES_PER_FILE = 500
 
 class MonsterParser:
     def __init__(self):
+        self.ensure_structure()
+        self.migrate_old_data()
         self.state = self.load_state()
-        self.geo_reader = None
-        try:
-            if os.path.exists(GEOIP_DB):
-                self.geo_reader = geoip2.database.Reader(GEOIP_DB)
-        except Exception as e:
-            logger.error(f"GeoIP Database error: {e}")
+        self.geo_reader = self.init_geo()
         
-        # Регулярка для поиска прокси-ссылок в любом мусоре
+        # Pattern to find proxy links in any "trash" text
         self.proxy_pattern = re.compile(r'(vless|vmess|trojan|ss|ssr)://[^\s"\'<>()]+')
         self.ip_pattern = re.compile(r'@?([\w\.-]+):(\d+)')
         self.semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
 
+    def ensure_structure(self):
+        """Creates required Russian folders"""
+        os.makedirs(DB_DIR, exist_ok=True)
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    def migrate_old_data(self):
+        """Moves files from root to 'база данных' if they exist in root"""
+        to_migrate = ['monster_state.json', 'GeoLite2-Country.mmdb', 'persistent_blacklist.txt', 'processed_sources.dat']
+        for filename in to_migrate:
+            if os.path.exists(filename) and not os.path.islink(filename):
+                try:
+                    shutil.move(filename, os.path.join(DB_DIR, filename))
+                    logger.info(f"🚚 Moved {filename} to '{DB_DIR}/'")
+                except Exception as e:
+                    logger.error(f"Migration error for {filename}: {e}")
+
+    def init_geo(self):
+        if os.path.exists(GEOIP_DB):
+            try:
+                return geoip2.database.Reader(GEOIP_DB)
+            except Exception as e:
+                logger.error(f"GeoIP Database error: {e}")
+        return None
+
     def load_state(self):
-        default_state = {"last_index": 0, "processed_total": 0, "dead_total": 0, "history": []}
+        default_state = {"last_index": 0, "processed_total": 0, "dead_total": 0}
         if os.path.exists(STATE_FILE):
             try:
-                with open(STATE_FILE, 'r') as f:
-                    data = json.load(f)
-                    return {**default_state, **data}
+                with open(STATE_FILE, 'r', encoding='utf-8') as f:
+                    return {**default_state, **json.load(f)}
             except Exception as e:
                 logger.warning(f"Failed to load state: {e}")
         return default_state
 
     def save_state(self):
         try:
-            with open(STATE_FILE, 'w') as f:
+            with open(STATE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.state, f, indent=4)
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
@@ -94,7 +123,7 @@ class MonsterParser:
         return None, None
 
     def decode_content(self, content):
-        """Декодирует Base64 содержимое подписок или возвращает текст как есть"""
+        """Decodes Base64 or returns plain text"""
         try:
             decoded = base64.b64decode(content).decode('utf-8', errors='ignore')
             if '://' in decoded:
@@ -104,7 +133,7 @@ class MonsterParser:
         return content
 
     async def fetch_subscription(self, session, url):
-        """Скачивает подписку и извлекает из неё ссылки"""
+        """Downloads sub and extracts links"""
         try:
             async with session.get(url, timeout=10) as response:
                 if response.status == 200:
@@ -150,6 +179,7 @@ class MonsterParser:
         except Exception: return None
 
     def wrap_for_russia(self, link):
+        """Applies fragment/mux for Russian optimization"""
         try:
             parsed = urlparse(link)
             if not parsed.scheme or (not parsed.netloc and '@' not in link): return link
@@ -168,21 +198,26 @@ class MonsterParser:
             return link
         except Exception: return link
 
+    def cleanup_root(self):
+        """Deletes old country .txt files from root to keep it clean as requested"""
+        protected = [SOURCE_FILE, 'requirements.txt', 'README.md', 'parser.py']
+        for f in os.listdir('.'):
+            if f.endswith('.txt') and f not in protected:
+                try:
+                    os.remove(f)
+                    logger.info(f"🧹 Cleaned up old file from root: {f}")
+                except: pass
+
     def update_links_for_clients(self, files_stats):
-        """Создает файл со ссылками для клиентов на основе обновленных файлов"""
+        """Updates LINKS_FOR_CLIENTS.txt in the 'прокси' folder"""
         try:
-            # Пытаемся получить URL репозитория для формирования RAW ссылок
             repo_url = ""
             try:
                 remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).decode().strip()
-                if "github.com" in remote:
-                    # Превращаем git@github.com:user/repo.git или https://github.com/user/repo.git
-                    # в https://raw.githubusercontent.com/user/repo/main/
-                    path = remote.replace("git@github.com:", "").replace("https://github.com/", "").replace(".git", "")
-                    repo_url = f"https://raw.githubusercontent.com/{path}/main"
+                path = remote.replace("git@github.com:", "").replace("https://github.com/", "").replace(".git", "")
+                repo_url = f"https://raw.githubusercontent.com/{path}/main/прокси"
             except:
-                logger.warning("Could not determine git remote URL, using placeholders.")
-                repo_url = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main"
+                repo_url = "https://raw.githubusercontent.com/USER/REPO/main/прокси"
 
             content = [
                 "🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ",
@@ -191,24 +226,27 @@ class MonsterParser:
                 ""
             ]
 
-            for filename, count in files_stats.items():
+            # Sort files by importance
+            sorted_files = sorted(files_stats.items(), key=lambda x: x[1], reverse=True)
+            for filename, count in sorted_files:
                 if count > 0:
-                    display_name = filename.replace(".txt", "").capitalize()
+                    display_name = filename.replace(".txt", "").upper()
                     content.append(f"📍 {display_name} ({count} nodes):")
                     content.append(f"{repo_url}/{filename}")
                     content.append("")
 
             with open(LINKS_INFO_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(content))
-            logger.info(f"✅ {LINKS_INFO_FILE} updated.")
         except Exception as e:
             logger.error(f"Failed to update client links file: {e}")
 
     async def run(self):
+        self.cleanup_root()
+        
         if os.path.exists(LOCK_FILE):
             lock_age = time.time() - os.path.getmtime(LOCK_FILE)
             if lock_age < 1200:
-                logger.warning(f"Process already running. Aborting.")
+                logger.warning("Process already running. Aborting.")
                 return
             else:
                 try: os.remove(LOCK_FILE)
@@ -218,44 +256,37 @@ class MonsterParser:
             with open(LOCK_FILE, 'w') as f: f.write(str(time.time()))
 
             if not os.path.exists(SOURCE_FILE):
-                logger.error("Source file missing!")
+                logger.error(f"Source file {SOURCE_FILE} missing!")
                 return
 
             with open(SOURCE_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-                raw_entries = [l.strip() for l in f if len(l.strip()) > 5]
+                raw_entries = list(dict.fromkeys([l.strip() for l in f if len(l.strip()) > 5]))
             
-            raw_entries = list(dict.fromkeys(raw_entries))
-            subscriptions = []
+            subscriptions = [e for e in raw_entries if e.startswith('http')]
             direct_configs = []
-            
-            for entry in raw_entries:
-                if entry.startswith('http'):
-                    subscriptions.append(entry)
-                else:
-                    found = [m.group(0) for m in self.proxy_pattern.finditer(entry)]
-                    direct_configs.extend(found)
+            for entry in [e for e in raw_entries if not e.startswith('http')]:
+                direct_configs.extend([m.group(0) for m in self.proxy_pattern.finditer(entry)])
 
             all_expanded_links = direct_configs
-            logger.info(f"🌐 Processing sources: {len(subscriptions)} subs, {len(direct_configs)} direct configs")
+            logger.info(f"🌐 Sources: {len(subscriptions)} subs, {len(direct_configs)} direct")
             
             async with aiohttp.ClientSession() as session:
-                sub_tasks = [self.fetch_subscription(session, url) for url in subscriptions]
-                sub_results = await asyncio.gather(*sub_tasks)
+                sub_results = await asyncio.gather(*[self.fetch_subscription(session, url) for url in subscriptions])
                 for sub_links in sub_results:
                     all_expanded_links.extend(sub_links)
 
-                initial_count = len(all_expanded_links)
                 all_expanded_links = list(dict.fromkeys(all_expanded_links))
-                duplicates_removed = initial_count - len(all_expanded_links)
                 total_count = len(all_expanded_links)
                 
                 if total_count == 0:
-                    logger.warning("No links found in any source.")
+                    logger.warning("No links found.")
                     return
 
+                # Batching logic
                 runs_per_cycle = (CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN
                 batch_size = max(500, int(total_count / runs_per_cycle))
                 
+                # Sort by priority regions
                 all_expanded_links.sort(key=lambda x: any(p in x.upper() for p in PRIORITY_REGIONS), reverse=True)
                 
                 start_idx = self.state.get("last_index", 0)
@@ -263,18 +294,14 @@ class MonsterParser:
                 end_idx = min(start_idx + batch_size, total_count)
                 
                 current_batch = all_expanded_links[start_idx:end_idx]
-                logger.info(f"📊 Engine Stats: Total Found={total_count}, Batch={len(current_batch)}")
+                logger.info(f"📊 Engine Batch: {len(current_batch)} nodes from {total_count}")
                 
                 ip_cache = {}
-                results = []
-                dead_links = set()
-                
-                tasks = []
-                for link in current_batch:
-                    h, p = self.get_host_port(link)
-                    tasks.append(self.check_node(session, h, p, ip_cache))
-                
+                tasks = [self.check_node(session, *self.get_host_port(link), ip_cache) for link in current_batch]
                 checked_data = await asyncio.gather(*tasks)
+                
+                live_results = []
+                dead_links = set()
                 
                 for idx, (ip, ping) in enumerate(checked_data):
                     link = current_batch[idx]
@@ -282,64 +309,54 @@ class MonsterParser:
                     limit = PING_LIMITS.get(country, PING_LIMITS['DEFAULT'])
                     
                     if ip and ping <= limit:
-                        results.append({
-                            "link": self.wrap_for_russia(link),
-                            "country": country,
-                            "ping": ping
-                        })
+                        final_link = self.wrap_for_russia(link) if country == 'RU' else link
+                        live_results.append({"link": final_link, "country": country})
                     else:
                         dead_links.add(link)
 
-            # 5. Обновление файлов по странам
+            # Update files in "прокси" folder
             files_updated_stats = {}
-            for filename in sorted(set(COUNTRY_MAP.values()) | {DEFAULT_MIX}):
+            target_filenames = set(COUNTRY_MAP.values()) | {DEFAULT_MIX}
+            
+            for filename in target_filenames:
+                path = os.path.join(OUTPUT_DIR, filename)
                 current_nodes = {}
-                if os.path.exists(filename):
-                    with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+                
+                # Load existing
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
                             node = l.strip()
-                            if node and node not in dead_links: 
+                            if node and node not in dead_links:
                                 current_nodes[node] = True
                 
-                for res in results:
-                    target_file = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
-                    if target_file == filename:
+                # Add new
+                for res in live_results:
+                    target = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
+                    if target == filename:
                         current_nodes[res['link']] = True
                 
-                nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_COUNTRY]
-                with open(filename, 'w', encoding='utf-8') as f:
+                nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_FILE]
+                with open(path, 'w', encoding='utf-8') as f:
                     f.write('\n'.join(nodes_to_save) + '\n')
                 files_updated_stats[filename] = len(nodes_to_save)
 
-            # 6. Обновление LINKS_FOR_CLIENTS.txt
             self.update_links_for_clients(files_updated_stats)
 
-            # 7. Глобальная чистка мастер-базы
-            final_sources = []
-            for entry in raw_entries:
-                if entry.startswith('http'):
-                    final_sources.append(entry)
-                elif entry not in dead_links:
-                    final_sources.append(entry)
-
+            # Update source file (clean dead nodes)
+            final_sources = [e for e in raw_entries if e.startswith('http') or e not in dead_links]
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(final_sources) + '\n')
 
-            # Сохранение состояния
-            self.state["last_index"] = end_idx if end_idx < total_count else 0
-            self.state["processed_total"] = self.state.get("processed_total", 0) + len(current_batch)
-            self.state["dead_total"] = self.state.get("dead_total", 0) + len(dead_links)
-            self.state["last_run_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Save state
+            self.state.update({
+                "last_index": end_idx if end_idx < total_count else 0,
+                "processed_total": self.state.get("processed_total", 0) + len(current_batch),
+                "dead_total": self.state.get("dead_total", 0) + len(dead_links),
+                "last_run_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
             self.save_state()
-            
-            print("\n" + "="*50)
-            print(f"🚀 MONSTER ENGINE REPORT | {self.state['last_run_time']}")
-            print("="*50)
-            print(f"📦 Sources: {len(subscriptions)} subs, {len(direct_configs)} direct")
-            print(f"🔍 Total unique nodes: {total_count}")
-            print(f"✅ Live in batch: {len(results)} | 💀 Dead: {len(dead_links)}")
-            print(f"📈 Total Active: {sum(files_updated_stats.values())}")
-            print("="*50 + "\n")
+            logger.info(f"✅ Cycle complete. Active nodes: {sum(files_updated_stats.values())}")
 
         except Exception as e:
             logger.critical(f"FATAL ERROR: {e}", exc_info=True)
@@ -349,5 +366,4 @@ class MonsterParser:
                 except: pass
 
 if __name__ == "__main__":
-    parser = MonsterParser()
-    asyncio.run(parser.run())
+    asyncio.run(MonsterParser().run())
