@@ -1,1 +1,3 @@
-# No failed nodes
+trojan://67e200f1-4ff5-42ca-8425-3f16f7986c29@t1.samsung.bforward2.uk:443
+trojan://b874173c-dfc6-40f4-9542-d973997f9659@103.173.255.21:443?sni=🔒
+trojan://origin@content-provider12.cdn-delivery.akamaicd.com:443
