@@ -16,18 +16,15 @@ from urllib.parse import quote, unquote
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ==============================================================================
-# 🚀 VPN MONSTER ENGINE - ULTIMATE AUTO-CLEAN EDITION v5.0
+# 🚀 VPN MONSTER ENGINE - ULTIMATE v6.0 (SMART PARSER & AUTO-CLEAN)
 # ==============================================================================
 
-# --- НАСТРОЙКИ ТАЙМЕРОВ И ЛИМИТОВ ---
-UPDATE_INTERVAL_HOURS = 1       # Интервал запуска
-HOURS_TO_COMPLETE_CYCLE = 12    # Чанкинг для защиты GeoIP
-WATCHER_INTERVAL_SEC = 2.0      # Проверка локальных изменений
-PORT_TIMEOUT = 3.5              # Таймаут TCP Ping
-
-# --- НАСТРОЙКИ ПОТОКОВ ---
-THREAD_COUNT = 150              # Жесткая многопоточность для пинга
-GEOIP_PARALLEL_LEVEL = 10       # Защита API GeoIP от бана
+# --- НАСТРОЙКИ ---
+UPDATE_INTERVAL_HOURS = 1       # Как часто GitHub Actions или Демон запускает цикл
+HOURS_TO_COMPLETE_CYCLE = 12    # На сколько частей делить старую базу
+PORT_TIMEOUT = 3.5              # Таймаут TCP проверки (в секундах)
+THREAD_COUNT = 150              # Жесткая многопоточность для быстрого пинга
+GEOIP_PARALLEL_LEVEL = 10       # Строго 10 потоков для GeoIP (чтобы не забанили API)
 
 # --- ФАЙЛЫ ---
 LOCK_FILE = "monster_daemon.lock"
@@ -62,9 +59,6 @@ def signal_handler(sig, frame):
     global SHOULD_EXIT
     print("\n[!] Остановка процесса...", flush=True)
     SHOULD_EXIT = True
-    if os.path.exists(LOCK_FILE):
-        try: os.remove(LOCK_FILE)
-        except: pass
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -76,16 +70,13 @@ def get_random_ua():
     ])
 
 def atomic_save(filepath, content):
+    """Безопасное сохранение файлов."""
     tmp_file = f"{filepath}.tmp"
     try:
         with open(tmp_file, 'w', encoding='utf-8') as f: f.write(content)
         os.replace(tmp_file, filepath)
     except Exception as e:
         print(f"[ERROR] Ошибка сохранения {filepath}: {e}")
-
-def get_file_mod_time(filepath):
-    try: return os.path.getmtime(filepath) if os.path.exists(filepath) else 0
-    except: return 0
 
 def decode_base64(data):
     try:
@@ -101,26 +92,36 @@ def encode_base64(data):
     except: return ""
 
 # ==============================================================================
-# --- БРОНЕБОЙНЫЙ ПАРСЕР ---
+# --- СУПЕР-ПАРСЕР ---
 # ==============================================================================
 
+def extract_urls(text):
+    """Вытаскивает ссылки http/https из любого мусора (скобки, тире, пробелы)."""
+    urls = re.findall(r'https?://[a-zA-Z0-9\-\.\_\~\:\/\?\#\[\]\@\!\$\&\'\(\)\*\+\,\;\=\%]+', text)
+    clean_urls = set()
+    for u in urls:
+        # Убираем случайные закрывающие скобки или кавычки в конце ссылки
+        u = u.rstrip('.,;)\'"]')
+        clean_urls.add(u)
+    return list(clean_urls)
+
 def extract_all_configs(text):
-    """Агрессивный экстрактор: достает ссылки из текста, логов, json и Base64."""
-    configs = []
-    # 1. Ищем прямые ссылки
-    pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s#"\'<>,]+'
-    found = re.findall(pattern, text)
-    if found: configs.extend(found)
+    """Агрессивный экстрактор: достает сырые конфиги даже из зашифрованного Base64."""
+    configs = set()
+    pattern = r'(?:' + '|'.join(ALLOWED_PROTOCOLS).replace('://', '') + r')://[^\s<>"\'\[\]]+'
     
-    # 2. Пробуем раскодировать построчно, если это Base64
+    # 1. Прямой поиск в тексте
+    for f in re.findall(pattern, text): configs.add(f)
+    
+    # 2. Поиск внутри Base64
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith('http') or '://' in line: continue
         decoded = decode_base64(line)
         if decoded and any(p in decoded for p in ALLOWED_PROTOCOLS):
-            configs.extend(re.findall(pattern, decoded))
+            for f in re.findall(pattern, decoded): configs.add(f)
             
-    return list(set(configs))
+    return list(configs)
 
 def get_server_info(config):
     try:
@@ -186,8 +187,20 @@ def check_ip_location_smart(host):
         except: continue
     return "UN"
 
+def check_worker(config, seen_lock, global_seen):
+    h, p = get_server_info(config)
+    if not h or not p: return ("INVALID", "invalid", config)
+    nid = f"{h}:{p}"
+    
+    with seen_lock:
+        if nid in global_seen: return ("DUPLICATE", nid, config)
+        global_seen.add(nid)
+        
+    if is_node_alive(h, p): return ("OK", nid, config)
+    else: return ("FAIL", nid, config)
+
 # ==============================================================================
-# --- ПАМЯТЬ СОСТОЯНИЙ ---
+# --- ПАМЯТЬ И ФАЙЛОВЫЕ ОПЕРАЦИИ ---
 # ==============================================================================
 
 def load_state():
@@ -200,52 +213,43 @@ def load_state():
 def save_state(state):
     atomic_save(MONSTER_STATE_FILE, json.dumps(state, indent=2))
 
-def check_worker(config, seen_lock, global_seen):
-    h, p = get_server_info(config)
-    if not h or not p: return None
-    nid = f"{h}:{p}"
-    
-    with seen_lock:
-        if nid in global_seen: return None
-        global_seen.add(nid)
-        
-    if is_node_alive(h, p): return ("OK", nid, config)
-    else: return ("FAIL", nid, config)
-
-# ==============================================================================
-# --- СИНХРОНИЗАЦИЯ И ЗАЧИСТКА ---
-# ==============================================================================
-
-def rewrite_all_sources(external_links, alive_configs):
+def rewrite_all_sources(links, pending_and_alive_configs):
     """
-    МАГИЯ АВТО-ОЧИСТКИ: Перезаписывает all_sources.txt.
-    Оставляет внешние http-ссылки и ТОЛЬКО те ручные конфиги, которые прошли TCP-пинг.
+    Авто-очистка: Перезаписывает all_sources.txt. Удаляет все дубликаты.
+    Оставляет только рабочие конфиги и уникальные ссылки.
     """
-    lines = ["# 🚀 VPN MONSTER - АВТОМАТИЧЕСКИЙ МАСТЕР-ЛИСТ"]
-    lines.append(f"# Последнее обновление: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    lines.append("# Мертвые узлы удаляются отсюда автоматически.\n")
+    lines = [
+        "# 🚀 VPN MONSTER - АВТОМАТИЧЕСКИЙ МАСТЕР-ЛИСТ",
+        f"# Последнее обновление: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "# Сюда можно кидать ссылки и конфиги в любом формате. Бот сам отфильтрует дубликаты и мертвецов.\n"
+    ]
     
-    if external_links:
+    if links:
         lines.append("# --- ВНЕШНИЕ ИСТОЧНИКИ ПОДПИСОК ---")
-        lines.extend(external_links)
+        lines.extend(sorted(list(set(links))))
         lines.append("")
         
-    if alive_configs:
-        lines.append("# --- АКТИВНЫЕ ЛОКАЛЬНЫЕ КОНФИГИ ---")
-        lines.extend(alive_configs)
+    if pending_and_alive_configs:
+        lines.append("# --- АКТИВНЫЕ И НОВЫЕ ЛОКАЛЬНЫЕ КОНФИГИ ---")
+        lines.extend(sorted(list(set(pending_and_alive_configs))))
+        lines.append("")
         
-    atomic_save(ALL_SOURCES_FILE, "\n".join(lines) + "\n")
-    print("🧹 Файл all_sources.txt очищен от мертвецов и пересобран!")
+    atomic_save(ALL_SOURCES_FILE, "\n".join(lines))
+    print("\n🧹 Файл all_sources.txt очищен от мусора и дубликатов. Идеальный порядок!")
 
 def save_and_organize(master_set, state):
+    """Распределяет живые конфиги по странам."""
     structured = {c: [] for c in COUNTRIES}
     final_mix, failed_list = [], []
+    
+    alive_count = 0
 
     for cfg in master_set:
         cfg_state = state.get(cfg, {})
         status = cfg_state.get('status')
         
         if status == 'OK':
+            alive_count += 1
             code = cfg_state.get('geoip', 'UN')
             matched = False
             for c_name, c_info in COUNTRIES.items():
@@ -259,10 +263,11 @@ def save_and_organize(master_set, state):
         elif status == 'FAIL':
             failed_list.append(cfg)
 
-    # Запись по странам
+    print(f"\n📁 РАСПРЕДЕЛЕНИЕ ПО СТРАНАМ (Всего активных: {alive_count}):")
     for country in COUNTRIES:
         valid = sorted(list(set(structured[country])))
         atomic_save(f"{country}.txt", "\n".join(valid) if valid else f"# No active nodes for {country}\n")
+        if valid: print(f"   > {COUNTRIES[country]['flag']} {country.upper()}: {len(valid)} узлов")
 
     valid_mix = sorted(list(set(final_mix)))
     atomic_save("mix.txt", "\n".join(valid_mix) if valid_mix else "# No active nodes found\n")
@@ -297,7 +302,7 @@ def run_update_cycle(trigger_reason="Таймер"):
     now_ts = start_time.timestamp()
     
     print(f"\n{'='*70}")
-    print(f"🔥 ЗАПУСК MONSTER ENGINE | Причина: {trigger_reason}")
+    print(f"🔥 ЗАПУСК MONSTER ENGINE v6.0 | Причина: {trigger_reason}")
     print(f"{'='*70}\n")
     
     state = load_state()
@@ -306,56 +311,56 @@ def run_update_cycle(trigger_reason="Таймер"):
     external_links = []
     downloaded_configs = []
     
-    # 1. Читаем all_sources.txt
+    # 1. Читаем all_sources.txt суровым парсером
+    print("🔍 Анализ локального файла all_sources.txt...", flush=True)
     if os.path.exists(ALL_SOURCES_FILE):
         with open(ALL_SOURCES_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
-            # Достаем ссылки
-            for line in content.splitlines():
-                l = line.strip()
-                if l.startswith('http'): external_links.append(l)
-            
-            # Достаем локальные конфиги из файла
+            external_links = extract_urls(content)
             local_raw_configs = extract_all_configs(content)
+            print(f"   > Найдено ссылок на подписки: {len(external_links)}")
+            print(f"   > Найдено локальных конфигов: {len(local_raw_configs)}")
                     
     # 2. Скачиваем конфиги по внешним ссылкам
     if external_links:
-        print(f"📡 Загрузка данных из {len(external_links)} внешних ссылок...")
-        for url in set(external_links):
+        print(f"\n📡 Скачивание баз по {len(external_links)} внешним ссылкам...", flush=True)
+        for url in external_links:
             if SHOULD_EXIT: break
             try:
                 r = requests.get(url, timeout=15, headers={'User-Agent': get_random_ua()})
                 found = extract_all_configs(r.text)
                 downloaded_configs.extend(found)
+                print(f"   > [OK] Ссылка обработана (найдено {len(found)} конфигов)")
             except Exception as e: 
-                print(f"   [!] Ошибка загрузки {url}: {e}")
+                print(f"   > [FAIL] Ошибка загрузки {url}")
 
-    # Объединяем всё в Мастер-Лист
+    # 3. Формируем Мастер-Лист
     master_set = list(set(local_raw_configs + downloaded_configs))
-    print(f"🔍 Собрано конфигураций: Локальных: {len(local_raw_configs)}, Из сети: {len(downloaded_configs)}")
-    print(f"🔍 ВСЕГО УНИКАЛЬНЫХ ДЛЯ ПРОВЕРКИ: {len(master_set)}")
+    print(f"\n⚖️ ИТОГО УНИКАЛЬНЫХ УЗЛОВ ВО ВСЕХ ИСТОЧНИКАХ: {len(master_set)}")
 
-    # ЗАЩИТА ОТ УДАЛЕНИЯ ПРИ ОШИБКЕ: Если парсер ничего не нашел - стоп!
-    if not master_set and (local_raw_configs or external_links):
-        print("⚠️ ВНИМАНИЕ: Источники есть, но конфиги не найдены. Остановка для защиты базы от затирания!")
+    if not master_set:
+        print("⚠️ База пуста. Останавливаем работу для защиты от удаления файлов.")
         return
 
     # Зеркалирование State (удаляем призраков)
     keys_to_delete = [cfg for cfg in state.keys() if cfg not in master_set]
     for k in keys_to_delete: del state[k]
 
-    # Чанкинг (Очередь)
+    # 4. Чанкинг: Все новые проверяем СРАЗУ, старые делим на части
     new_configs = [c for c in master_set if c not in state]
     old_configs = sorted([c for c in master_set if c in state], key=lambda c: state[c].get('last_checked', 0))
     
     chunk_size = max(500, len(master_set) // HOURS_TO_COMPLETE_CYCLE)
-    if os.environ.get("GITHUB_ACTIONS") == "true": chunk_size = len(master_set)
+    if os.environ.get("GITHUB_ACTIONS") == "true": chunk_size = len(master_set) # В Actions чекаем всё
     
     chunk_to_check = list(dict.fromkeys(new_configs + old_configs[:chunk_size]))
-    print(f"⚡ Очередь проверки: {len(chunk_to_check)} конфигов (Потоков: {THREAD_COUNT})...")
+    print(f"\n⚡ ОЧЕРЕДЬ ПРОВЕРКИ (TCP PING):")
+    print(f"   > Новых конфигов: {len(new_configs)}")
+    print(f"   > Старых конфигов (плановый чек): {len(chunk_to_check) - len(new_configs)}")
+    print(f"   > ВСЕГО В ОЧЕРЕДИ: {len(chunk_to_check)} (Потоков: {THREAD_COUNT})")
 
     # TCP Ping
-    valid_in_chunk = []
+    valid_in_chunk, failed_in_chunk, duplicate_in_chunk = [], [], 0
     global_seen = set()
     seen_lock = threading.Lock()
     
@@ -367,16 +372,26 @@ def run_update_cycle(trigger_reason="Таймер"):
                 res = future.result()
                 if res:
                     status, nid, config = res
+                    if status == "DUPLICATE":
+                        duplicate_in_chunk += 1
+                        continue
+                        
                     if config not in state: state[config] = {}
                     state[config]['last_checked'] = now_ts
                     state[config]['status'] = status
+                    
                     if status == "OK": valid_in_chunk.append(config)
+                    elif status == "FAIL": failed_in_chunk.append(config)
             except: continue
+
+    print(f"   > [OK] Прошли TCP проверку: {len(valid_in_chunk)}")
+    print(f"   > [FAIL] Мертвые (отключены): {len(failed_in_chunk)}")
+    if duplicate_in_chunk > 0: print(f"   > [ДУБЛИКАТЫ] Вырезано: {duplicate_in_chunk}")
 
     # GeoIP (Только для живых без локации)
     nodes_for_geoip = [cfg for cfg in valid_in_chunk if state[cfg].get('geoip', 'UN') == 'UN']
     if nodes_for_geoip:
-        print(f"🌍 GeoIP для {len(nodes_for_geoip)} новых узлов ({GEOIP_PARALLEL_LEVEL} потоков)...", flush=True)
+        print(f"\n🌍 Запуск GeoIP для {len(nodes_for_geoip)} новых узлов ({GEOIP_PARALLEL_LEVEL} потоков)...", flush=True)
         with ThreadPoolExecutor(max_workers=GEOIP_PARALLEL_LEVEL) as geo_executor:
             geo_futures = [geo_executor.submit(lambda cfg: (cfg, check_ip_location_smart(get_server_info(cfg)[0])), cfg) for cfg in nodes_for_geoip]
             for f in as_completed(geo_futures):
@@ -388,12 +403,18 @@ def run_update_cycle(trigger_reason="Таймер"):
 
     save_state(state)
 
-    # --- ПЕРЕЗАПИСЬ ALL_SOURCES.TXT (АВТО-УДАЛЕНИЕ) ---
-    # Мы фильтруем local_raw_configs, оставляя только те, которые сейчас имеют статус OK
-    alive_local_configs = [cfg for cfg in local_raw_configs if state.get(cfg, {}).get('status') == 'OK']
-    rewrite_all_sources(list(set(external_links)), list(set(alive_local_configs)))
+    # 5. Перезапись ALL_SOURCES.TXT
+    # Оставляем локальные конфиги, которые:
+    # 1. Либо прошли проверку (OK)
+    # 2. Либо ЕЩЕ НЕ ПРОВЕРЯЛИСЬ (Pending) - чтобы не удалить их раньше времени
+    alive_or_pending_local = []
+    for cfg in local_raw_configs:
+        st = state.get(cfg, {}).get('status')
+        if st != 'FAIL': alive_or_pending_local.append(cfg)
+        
+    rewrite_all_sources(external_links, alive_or_pending_local)
 
-    # Сохраняем финальные файлы стран и GitHub push
+    # 6. Сохраняем файлы стран и пушим
     save_and_organize(master_set, state)
     git_commit_push()
     
@@ -404,46 +425,14 @@ def run_update_cycle(trigger_reason="Таймер"):
 # --- СТАРТ ---
 # ==============================================================================
 
-def start_daemon():
-    if os.environ.get("GITHUB_ACTIONS") == "true":
-        print("\n[GITHUB ACTIONS] Запуск полного цикла...")
-        run_update_cycle("Автоматический запуск GitHub Actions")
-        return
-
-    if os.path.exists(LOCK_FILE): return
-    with open(LOCK_FILE, 'w') as f: f.write(str(os.getpid()))
-    
-    print(f"\n🛡️ VPN MONSTER DAEMON 5.0 АКТИВЕН 🛡️\n")
-    last_run_time, last_sources_mod_time = datetime.min, get_file_mod_time(ALL_SOURCES_FILE)
-    
-    try:
-        while not SHOULD_EXIT:
-            now, trigger_reason = datetime.now(), None
-            if now - last_run_time >= timedelta(hours=UPDATE_INTERVAL_HOURS): trigger_reason = "Таймер"
-            
-            curr_mod = get_file_mod_time(ALL_SOURCES_FILE)
-            if curr_mod > last_sources_mod_time:
-                trigger_reason = f"Изменение {ALL_SOURCES_FILE}"
-                last_sources_mod_time = curr_mod
-            
-            if trigger_reason:
-                run_update_cycle(trigger_reason)
-                last_run_time = datetime.now()
-                last_sources_mod_time = get_file_mod_time(ALL_SOURCES_FILE)
-                
-            time.sleep(WATCHER_INTERVAL_SEC)
-    finally:
-        if os.path.exists(LOCK_FILE):
-            try: os.remove(LOCK_FILE)
-            except: pass
-
 if __name__ == "__main__":
     try:
         socket.setdefaulttimeout(PORT_TIMEOUT)
-        start_daemon()
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print("\n[GITHUB ACTIONS] Запуск полного цикла...")
+            run_update_cycle("Автоматический запуск GitHub Actions")
+        else:
+            run_update_cycle("Ручной запуск")
     except Exception as e:
         print(f"\n[FATAL ERROR]: {e}")
-        if os.path.exists(LOCK_FILE):
-            try: os.remove(LOCK_FILE)
-            except: pass
         sys.exit(1)
