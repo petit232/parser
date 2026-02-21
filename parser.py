@@ -273,7 +273,8 @@ def save_and_organize(structured, final_mix_list, failed_list):
     Файлы ПЕРЕЗАПИСЫВАЮТСЯ полностью. Если источника нет или он пуст — файл затирается.
     Обеспечивает 100% синхронизацию между all_sources.txt и конечными подписками.
     """
-    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Добавляем микросекунды, чтобы Git всегда видел изменение контента и делал коммит
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     # Синхронизация по странам
     for country in COUNTRIES:
@@ -331,13 +332,14 @@ def git_commit_push():
         
         subprocess.run(["git", "add", "*.txt"], check=True)
         
-        if subprocess.run(["git", "diff", "--cached", "--quiet"]).returncode == 0:
+        # Мы убрали проверку на "diff --quiet", чтобы коммит шел всегда, так как время в файлах меняется
+        msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M:%S')} | Mirror Sync Active"
+        commit_res = subprocess.run(["git", "commit", "-m", msg], capture_output=True, text=True)
+        
+        if "nothing to commit" in commit_res.stdout:
             print("[Git] Файлы уже синхронизированы. Изменений нет.")
             return
             
-        msg = f"Ultra-Sync {datetime.now().strftime('%d/%m %H:%M')} | Mirror Sync Active"
-        subprocess.run(["git", "commit", "-m", msg], check=True)
-        
         # Force push гарантирует, что репозиторий будет точной копией локальных данных
         subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
         print("[Git] Зеркало успешно обновлено!")
