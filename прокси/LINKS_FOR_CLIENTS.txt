@@ -1,54 +1,57 @@
 🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ
-Обновлено: 21/02/2026 20:12:23
+Обновлено: 21/02/2026 20:15:26
 ------------------------------------------
 
-📍 MIX (347 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/mix.txt
+📍 ESTONIA (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/estonia.txt
 
-📍 USA (106 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/usa.txt
-
-📍 NETHERLANDS (32 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/netherlands.txt
-
-📍 GERMANY (25 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/germany.txt
-
-📍 SWEDEN (11 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/sweden.txt
-
-📍 FRANCE (8 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/france.txt
-
-📍 RUSSIA (8 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/russia.txt
-
-📍 UK (7 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/uk.txt
-
-📍 KAZAKHSTAN (5 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/kazakhstan.txt
-
-📍 FINLAND (3 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/finland.txt
-
-📍 SWITZERLAND (3 nodes):
+📍 SWITZERLAND (0 nodes):
 https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/switzerland.txt
 
-📍 SINGAPORE (2 nodes):
+📍 FRANCE (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/france.txt
+
+📍 SINGAPORE (0 nodes):
 https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/singapore.txt
 
-📍 LITHUANIA (2 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/lithuania.txt
+📍 SWEDEN (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/sweden.txt
 
-📍 LATVIA (2 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/latvia.txt
+📍 KAZAKHSTAN (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/kazakhstan.txt
 
-📍 HONGKONG (1 nodes):
+📍 MIX (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/mix.txt
+
+📍 GERMANY (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/germany.txt
+
+📍 FINLAND (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/finland.txt
+
+📍 UK (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/uk.txt
+
+📍 BELARUS (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/belarus.txt
+
+📍 HONGKONG (0 nodes):
 https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/hongkong.txt
 
-📍 POLAND (1 nodes):
+📍 RUSSIA (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/russia.txt
+
+📍 NETHERLANDS (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/netherlands.txt
+
+📍 LITHUANIA (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/lithuania.txt
+
+📍 LATVIA (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/latvia.txt
+
+📍 POLAND (0 nodes):
 https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/poland.txt
 
-📍 ESTONIA (1 nodes):
-https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/estonia.txt
+📍 USA (0 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/%D0%BF%D1%80%D0%BE%D0%BA%D1%81%D0%B8/usa.txt
