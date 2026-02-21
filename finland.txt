@@ -1,6 +1,5 @@
-vless://1971ec0f-fa37-4112-9b4e-4952e84df2a9@65.109.220.223:24542?security=none&encryption=none&headerType=none&type=tcp
-vless://6202b230-417c-4d8e-b624-0f71afa9c75d@81.85.72.197:443?path=%2F%3Fed&security=tls&encryption=none&insecure=0&host=sni.111000.indevs.in&fp=chrome&type=ws&allowInsecure=0&sni=sni.111000.indevs.in
-vless://fa-397456379-1771009078823820@85.192.49.216:443?security=reality&encryption=none&pbk=2rjzbqQ49m-jpfzhiuBNb8Izwwjw0dIg5JAKdv-B2kE&headerType=none&fp=chrome&spx=/&allowinsecure=0&type=tcp&flow=xtls-rprx-vision&sni=tradingview.com&sid=d1d42381ba35
+ss://MjAyMi1ibGFrZTMtYWVzLTEyOC1nY206aWV0WGJmcTAzVmg4WENheHlDRElFZz09@95.217.37.166:2020
+vless://ca2b2268-e2c4-4a78-beee-111189a861e7@144.31.90.99:8104?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=4gcDJumxa0bTaHvrZRL4Hb5ItXPha6ZYZ0fGmMD_k0A&security=reality&sid=1afc9d750da1ba88&sni=tradingview.com&type=tcp
 
-# Total: 3
-# Updated: 2026-02-21 10:14:35
+# Total: 2
+# Updated: 2026-02-21 10:31:48

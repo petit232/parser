@@ -1,8 +1,6 @@
 hysteria2://75193bef8d8fe82341e02dd083dc1399@dd.openaccessnode.com:989?insecure=0&sni=dd.ircybersec.org&obfs=salamander&obfs-password=@JavidnamanIran-Javid-SHAH-King-Reza-Pahlavi
-trojan://telegram-id-directvpn@13.49.224.224:22222?security=tls&sni=trj.rollingnext.co.uk
-vless://02fb468f-21f2-460e-bfa1-ef52ae5e627f@77.221.137.44:443?encryption=none&security=tls&sni=secdn13.suio.me&type=tcp
-vless://9936e4bd-036e-4e3d-a975-9cb37d07b611@lv.sephost.de:8085?security=reality&encryption=none&pbk=OIYG0kOVwCLP_Zkw_-uKRwX0jCcJkZxMADpTML4n0yU&headerType=none&fp=firefox&type=tcp&sni=stackoverflow.com&sid=9b1a0779152db496
-vless://ca0cee79-9920-4bce-aa2a-be89d6d84790@70.34.194.73:8443?security=reality&sni=sto-se-ping.vultr.com&type=tcp&fp=chrome&pbk=kQzN2YuAfK6zLF-YnToH8KJsBClM_XPr38Xlzr4Q3Bw&sid=c970cd609c52577e
+vless://d2d79fd8-a3d4-4792-9766-e472e1fe8a5f@45.8.93.110:443?mode=gun&security=reality&encryption=none&pbk=FCg2XiFJrpH-2XlELSSSyEC7zkeW29HOgp4rfrqXEAI&fp=chrome&type=grpc&serviceName=xyz&sni=cloudflare.com&sid=123abc
+vless://f6f0196d-4484-4a17-9553-0c4b646cde7c@185.146.173.95:2095/?type=ws&encryption=none&host=V2ray-_-_-_-_-_-ShhProxy.TelegramChannelJoinBede.com.&path=🔒
 
-# Total: 5
-# Updated: 2026-02-21 10:14:35
+# Total: 3
+# Updated: 2026-02-21 10:31:48
