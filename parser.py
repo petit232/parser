@@ -14,7 +14,7 @@ from datetime import datetime
 from collections import defaultdict
 
 # --- КОНФИГУРАЦИЯ СТРАН ---
-# Словарь для сопоставления кодов стран с именами файлов и эмодзи флагами.
+# Словарь содержит коды стран и соответствующие им названия файлов.
 COUNTRIES = {
     "belarus": {"flag": "🇧🇾", "code": "BY"},
     "kazakhstan": {"flag": "🇰🇿", "code": "KZ"},
@@ -32,48 +32,40 @@ COUNTRIES = {
     "france": {"flag": "🇫🇷", "code": "FR"}
 }
 
-# Поддерживаемые протоколы прокси
+# Поддерживаемые протоколы прокси-серверов
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
 
-# Глобальные переменные для кеширования и управления процессом
+# Глобальные переменные состояния
 IP_CACHE = {} 
 CACHE_LOCK = threading.Lock()
 UNRESOLVED_COUNT = 0 
 PROCESSED_COUNT = 0
-SHOULD_EXIT = False # Флаг для прерывания работы при таймауте GitHub Actions
+SHOULD_EXIT = False 
 
 def signal_handler(sig, frame):
-    """Обработчик сигналов завершения системы (SIGINT, SIGTERM)."""
+    """Обработчик системных сигналов завершения."""
     global SHOULD_EXIT
-    print("\n[!] Получен сигнал остановки системы. Пытаюсь экстренно сохранить прогресс...")
+    print("\n[!] Получен сигнал остановки (SIGINT/SIGTERM). Завершаю процессы...", flush=True)
     SHOULD_EXIT = True
 
-# Регистрация обработчиков сигналов
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 def decode_base64(data):
-    """
-    Безопасное декодирование Base64.
-    Очищает строку от не-ASCII символов и автоматически исправляет паддинг.
-    """
+    """Безопасное декодирование Base64 с исправлением паддинга и очисткой мусора."""
     try:
-        # Очистка: оставляем только валидные символы Base64
         data = re.sub(r'[^a-zA-Z0-9+/=]', '', data)
         if not data:
             return ""
-        
-        # Исправление отсутствующего паддинга (=)
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
-            
         return base64.b64decode(data).decode('utf-8', errors='ignore')
     except Exception:
         return ""
 
 def get_server_info(config):
-    """Извлекает хост и порт из строки конфигурации прокси."""
+    """Извлечение IP/Хоста и порта из различных форматов конфигов."""
     try:
         if config.startswith("vmess://"):
             decoded = decode_base64(config[8:])
@@ -81,7 +73,7 @@ def get_server_info(config):
                 v_data = json.loads(decoded)
                 return v_data.get('add', '').strip(), str(v_data.get('port', '')).strip()
         
-        # Универсальное регулярное выражение для vless, trojan, ss и др.
+        # Универсальный Regex для vless, trojan, ss и прочих
         match = re.search(r'://(?:[^@]+@)?([^:/#\?]+):(\d+)', config)
         if match:
             return match.group(1).strip(), match.group(2).strip()
@@ -90,37 +82,34 @@ def get_server_info(config):
     return None, None
 
 def check_ip_location(host):
-    """
-    Определяет страну IP-адреса через сервис ip-api.com.
-    Включена безопасная задержка для предотвращения бана IP (лимит 45 зап/мин).
-    """
+    """Определение страны IP через ip-api.com с жестким соблюдением лимитов."""
     global UNRESOLVED_COUNT, PROCESSED_COUNT
-    
-    if SHOULD_EXIT: 
-        return None
+    if SHOULD_EXIT: return None
 
+    # Проверка кеша
     with CACHE_LOCK:
         if host in IP_CACHE:
             return IP_CACHE[host]
 
-    # Базовая валидация хоста
+    # Валидация адреса
     if not host or len(host) < 3 or host.startswith("127.") or "localhost" in host:
         return None
 
+    # Поля запроса: статус, сообщение и код страны
     url = f"http://ip-api.com/json/{host}?fields=status,message,countryCode"
     
     for attempt in range(3): 
         if SHOULD_EXIT: break
         try:
-            # БЕЗОПАСНАЯ ЗАДЕРЖКА: ~1.4 секунды между запросами для соблюдения лимита 45/мин.
-            time.sleep(1.4)
+            # ЗАДЕРЖКА: 1.5 секунды между запросами для предотвращения бана IP GitHub-раннера.
+            # Лимит ip-api: 45 запросов в минуту. Мы делаем максимум 40.
+            time.sleep(1.5) 
             
             resp = requests.get(url, timeout=15)
             
             if resp.status_code == 429:
-                # Если всё же поймали 429, ждем дольше
-                print(f"(!) Превышен лимит (429). Ждем 65 секунд для сброса счетчика...")
-                time.sleep(65)
+                print(f"(!) Rate Limit (429). Жду 75 секунд...", flush=True)
+                time.sleep(75)
                 continue
                 
             if resp.status_code == 200:
@@ -131,15 +120,14 @@ def check_ip_location(host):
                         IP_CACHE[host] = code
                         PROCESSED_COUNT += 1
                         if PROCESSED_COUNT % 10 == 0:
-                            print(f"[{datetime.now().strftime('%H:%M:%S')}] GeoIP Прогресс: {PROCESSED_COUNT} узлов проверено.")
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] GeoIP Прогресс: {PROCESSED_COUNT} проверено.", flush=True)
                     return code
                 else:
-                    # IP не определен или зарезервирован (не повторяем попытку)
+                    # Ошибка в теле ответа (например, private IP)
                     break
             else:
                 time.sleep(2)
-        except (requests.exceptions.RequestException, Exception) as e:
-            print(f"  ! Ошибка сети при проверке IP {host}: {e}")
+        except Exception:
             time.sleep(2)
             
     with CACHE_LOCK:
@@ -147,19 +135,10 @@ def check_ip_location(host):
         IP_CACHE[host] = None
     return None
 
-def validate_config(config):
-    """Проверяет минимальную валидность строки прокси."""
-    if not any(config.startswith(p) for p in PROTOCOLS): 
-        return False
-    if len(config) < 15: 
-        return False
-    host, port = get_server_info(config)
-    return bool(host and port)
-
 def sanitize_sources(file_path):
-    """Очищает файл источников от дубликатов."""
+    """Очистка списка источников от мусора и дубликатов."""
     if not os.path.exists(file_path): 
-        print(f"(!) Файл {file_path} не найден.")
+        print(f"(!) Источник {file_path} не найден. Создаю новый.", flush=True)
         with open(file_path, 'w', encoding='utf-8') as f: pass
         return []
         
@@ -167,7 +146,7 @@ def sanitize_sources(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.read().splitlines()
     except Exception as e:
-        print(f"Ошибка при чтении источников: {e}")
+        print(f"Ошибка при чтении файла источников: {e}", flush=True)
         return []
         
     clean, seen = [], set()
@@ -179,82 +158,81 @@ def sanitize_sources(file_path):
             
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(clean))
-    print(f"Загружено уникальных источников: {len(clean)}")
+    print(f"Загружено уникальных источников: {len(clean)}", flush=True)
     return clean
 
 def save_results(structured_data, mix_data):
-    """Сохраняет результаты по странам и общий микс."""
+    """Сохранение отфильтрованных конфигов в текстовые файлы."""
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
+    # Сохранение по странам
     for country, configs in structured_data.items():
         file_name = f"{country}.txt"
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 if configs:
-                    f.write("\n".join(sorted(list(set(configs)))))
+                    # Удаляем дубликаты и сортируем
+                    unique_list = sorted(list(set(configs)))
+                    f.write("\n".join(unique_list))
                 f.write(f"\n\n# Total: {len(configs)}\n# Updated: {now_str}")
         except Exception as e:
-            print(f"Ошибка при сохранении файла {file_name}: {e}")
+            print(f"Ошибка записи в {file_name}: {e}", flush=True)
 
+    # Сохранение общего микса
     try:
         with open("mix.txt", 'w', encoding='utf-8') as f:
             if mix_data:
-                f.write("\n".join(sorted(list(set(mix_data)))))
+                unique_mix = sorted(list(set(mix_data)))
+                f.write("\n".join(unique_mix))
             f.write(f"\n\n# Total: {len(mix_data)}\n# Updated: {now_str}")
     except Exception as e:
-        print(f"Ошибка при сохранении mix.txt: {e}")
-    
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Все файлы (.txt) успешно обновлены.")
+        print(f"Ошибка записи в mix.txt: {e}", flush=True)
 
 def git_commit_and_push():
-    """Синхронизирует изменения с GitHub."""
+    """Синхронизация результатов с репозиторием GitHub."""
+    print("Инициализация синхронизации с GitHub...", flush=True)
     try:
-        # Настройка пользователя Git (исправлены кавычки)
         subprocess.run(["git", "config", "--global", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--global", "user.email", "bot@vpn-monster.com"], check=True)
         
-        # Добавляем файлы
         subprocess.run(["git", "add", "*.txt"], check=True)
         
-        # Проверяем наличие изменений (diff)
-        status = subprocess.run(["git", "diff", "--cached", "--quiet"])
-        if status.returncode == 0:
-            print("Нет новых данных для коммита.")
+        # Проверка наличия изменений
+        diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"])
+        if diff_check.returncode == 0:
+            print("Изменений в файлах не обнаружено. Пропускаю коммит.", flush=True)
             return
 
-        commit_msg = f"Auto-Update: {datetime.now().strftime('%Y-%m-%d %H:%M')} | IP-Checks: {len(IP_CACHE)}"
+        commit_msg = f"Auto-Update: {datetime.now().strftime('%Y-%m-%d %H:%M')} | Verified: {len(IP_CACHE)}"
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
         
-        # Rebase для предотвращения конфликтов
+        # Решение конфликтов через rebase
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
         
-        # Пушим
+        # Финальный пуш
         res = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
+        
         if res.returncode != 0:
-            print(f"Ошибка Git Push: {res.stderr}")
+            print(f"Ошибка Git Push: {res.stderr}", flush=True)
         else:
-            print(">>> Репозиторий GitHub успешно обновлен.")
-            
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка выполнения команды Git: {e}")
+            print(">>> Данные успешно запушены в репозиторий.", flush=True)
     except Exception as e:
-        print(f"Общая ошибка Git: {e}")
+        print(f"Критическая ошибка Git: {e}", flush=True)
 
 def process():
-    """Главный цикл работы парсера."""
+    """Основной процесс парсинга и фильтрации."""
     start_time = datetime.now()
-    print(f"--- СТАРТ ПАРСЕРА: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ---")
+    print(f"--- ЗАПУСК ПАРСЕРА: {start_time.strftime('%Y-%m-%d %H:%M:%S')} ---", flush=True)
     
-    source_file = 'all_sources.txt'
-    sources = sanitize_sources(source_file)
+    sources = sanitize_sources('all_sources.txt')
     if not sources:
-        print("Список источников пуст. Завершение.")
+        print("Источники не найдены. Выход.", flush=True)
         return
 
     proto_groups = defaultdict(list)
     seen_nodes = set()
     
-    print("Этап 1: Сбор и фильтрация конфигов...")
+    print("Этап 1: Сбор данных из источников...", flush=True)
     for url in sources:
         if SHOULD_EXIT: break
         
@@ -263,28 +241,23 @@ def process():
                 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
                 with requests.get(url, timeout=30, headers=headers, stream=True) as r:
                     r.raise_for_status()
-                    chunks = []
-                    downloaded = 0
-                    # Читаем чанками для экономии памяти
+                    
+                    # Читаем данные чанками для защиты от гигантских файлов
+                    full_content = ""
                     for chunk in r.iter_content(chunk_size=1024*1024, decode_unicode=True):
-                        if chunk:
-                            chunks.append(chunk)
-                            downloaded += len(chunk)
-                        if downloaded > 15 * 1024 * 1024: # Лимит 15МБ
-                            print(f"  ! Источник {url[:40]}... слишком большой, обрезано.")
+                        if chunk: full_content += chunk
+                        if len(full_content) > 12 * 1024 * 1024: # Лимит 12МБ
+                            print(f"  ! Источник {url[:30]}... слишком большой, обрезаю.", flush=True)
                             break
                     
-                    content = "".join(chunks)
-                    del chunks 
-                    
-                    # Декодирование, если это подписка Base64
-                    if not any(p in content for p in PROTOCOLS):
-                        decoded = decode_base64(content)
-                        if decoded: content = decoded
+                    # Проверка на Base64 (подписки)
+                    if not any(p in full_content for p in PROTOCOLS):
+                        decoded = decode_base64(full_content)
+                        if decoded: full_content = decoded
                     
                     found_count = 0
-                    # Поиск по регулярному выражению
-                    for m in re.finditer(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', content):
+                    # Регулярное выражение для захвата всех типов прокси
+                    for m in re.finditer(r'(?:vless|vmess|trojan|ss|hysteria2|tuic)://[^\s#"\'<>,]+', full_content):
                         cfg = m.group(0)
                         host, port = get_server_info(cfg)
                         if host and port:
@@ -297,55 +270,49 @@ def process():
                                         found_count += 1
                                         break
                     
-                    print(f"  + {url[:50]}... : +{found_count} узлов")
-                    del content
-                    gc.collect() 
+                    print(f"  + {url[:45]}... : Найдено {found_count}", flush=True)
+                    del full_content
+                    gc.collect() # Очистка памяти
             except Exception as e:
-                print(f"  - Ошибка при парсинге {url[:40]}: {e}")
+                print(f"  ! Ошибка в {url[:30]}: {e}", flush=True)
                 continue
         else:
-            # Если в источнике прямая ссылка
+            # Обработка прямых строк конфигов в файле источников
             host, port = get_server_info(url)
             if host and port:
-                node_id = f"{host}:{port}"
-                if node_id not in seen_nodes:
-                    seen_nodes.add(node_id)
+                nid = f"{host}:{port}"
+                if nid not in seen_nodes:
+                    seen_nodes.add(nid)
                     for p in PROTOCOLS:
                         if url.startswith(p):
                             proto_groups[p].append(url)
                             break
 
-    total_unique = len(seen_nodes)
-    if total_unique == 0:
-        print("Ничего не найдено. Проверка завершена.")
+    if not seen_nodes:
+        print("Валидных прокси не найдено.", flush=True)
         return
 
-    print("\nРаспределение по протоколам:")
-    for p, items in proto_groups.items():
-        print(f"  - {p}: {len(items)}")
-
-    # Формирование очереди (Round Robin)
+    # Ограничение очереди для предотвращения таймаутов GitHub Actions
     process_list = []
-    limit = 400 # Увеличил лимит до 400
+    limit_per_run = 380 
     
-    # Перемешиваем для честного распределения
-    for p in proto_groups: 
+    # Перемешивание групп
+    for p in proto_groups:
         random.shuffle(proto_groups[p])
     
-    # Собираем список по очереди из каждого протокола
-    while len(process_list) < limit and any(proto_groups.values()):
+    # Алгоритм Round Robin для разнообразия протоколов в результатах
+    while len(process_list) < limit_per_run and any(proto_groups.values()):
         for p in list(proto_groups.keys()):
             if proto_groups[p]:
                 process_list.append(proto_groups[p].pop(0))
             else:
                 del proto_groups[p]
-            if len(process_list) >= limit: break
+            if len(process_list) >= limit_per_run: break
 
     structured_data = {c: [] for c in COUNTRIES}
     mix_data = []
     
-    print(f"\nЭтап 2: GeoIP проверка ({len(process_list)} узлов с защитой от бана)...")
-    
+    print(f"\nЭтап 2: Проверка GeoIP ({len(process_list)} узлов)...", flush=True)
     for cfg in process_list:
         if SHOULD_EXIT: break
         
@@ -353,31 +320,28 @@ def process():
         country_code = check_ip_location(host)
         
         if country_code:
-            matched = False
-            for country_key, info in COUNTRIES.items():
+            # Сверка кода страны с нашим списком
+            for key, info in COUNTRIES.items():
                 if country_code == info["code"] or country_code == info.get("alt_code"):
-                    structured_data[country_key].append(cfg)
-                    matched = True
+                    structured_data[key].append(cfg)
                     break
         
-        # Добавляем в микс все проверенные (даже те, чья страна не в списке целевых)
         mix_data.append(cfg)
 
-    # Сохранение результатов в файлы
+    # Сохранение и фиксация изменений
     save_results(structured_data, mix_data)
-    
-    # Финальная синхронизация с GitHub
     git_commit_and_push()
     
     end_time = datetime.now()
-    print(f"\n--- ГОТОВО: {end_time.strftime('%H:%M:%S')} (Заняло: {end_time - start_time}) ---")
+    print(f"\n--- РАБОТА ЗАВЕРШЕНА: {end_time.strftime('%H:%M:%S')} ---", flush=True)
+    print(f"Общее время выполнения: {end_time - start_time}", flush=True)
 
 if __name__ == "__main__":
     try:
         process()
     except Exception as e:
-        print(f"\n[КРИТИЧЕСКИЙ СБОЙ]: {e}")
-        # Пробуем сохранить то, что успели обработать
+        print(f"\n[КРИТИЧЕСКИЙ СБОЙ ПРИЛОЖЕНИЯ]: {e}", flush=True)
+        # Экстренная попытка сохранить данные
         try:
             git_commit_and_push()
         except:
