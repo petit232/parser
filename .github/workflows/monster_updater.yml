@@ -1,97 +1,56 @@
-name: VPN Monster Auto-Update Ultimate
+name: ⚡ Monster Engine Auto-Sync
 
 on:
-  # 1. МГНОВЕННОЕ ОБНОВЛЕНИЕ: срабатывает при любом изменении базы
-  push:
-    branches:
-      - main
-    paths:
-      - 'all_sources.txt'
-      - 'parser.py'
-      - '.github/workflows/monster_updater.yml'
-
-  # 2. АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ: запуск КАЖДЫЙ ЧАС (1 раз в час)
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *' # Запуск каждый час
+  push:
+    paths:
+      - 'all_sources.txt' # Запуск при ручном добавлении серверов
+  workflow_dispatch: # Возможность запустить вручную кнопкой
 
-  # 3. РУЧНОЙ ЗАПУСК: добавляет кнопку "Run workflow" во вкладке Actions
-  workflow_dispatch:
+permissions:
+  contents: write
 
 jobs:
-  build:
-    name: Sync and Update Nodes
+  monster-sync:
     runs-on: ubuntu-latest
-    
-    # Разрешения на запись контента обязательны для работы бота с файлами
-    permissions:
-      contents: write
-
     steps:
-      # Шаг 1: Инициализация репозитория. fetch-depth: 0 нужен для корректного pull/rebase
-      - name: Checkout repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Шаг 2: Настройка стабильной версии Python
-      - name: Set up Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip' # Кэширование зависимостей для ускорения запусков
+          cache: 'pip'
 
-      # Шаг 3: Установка зависимостей
-      - name: Install dependencies
+      - name: 📦 Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests
+          pip install geoip2 aiohttp
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      # Шаг 4: Запуск основного движка (одиночный цикл для GitHub)
-      - name: Run Monster Parser Engine
+      - name: 🌍 Download GeoIP Database
         run: |
-          rm -f failed_nodes.txt.tmp 2>/dev/null
-          python parser.py
+          # Скачиваем актуальную базу стран (публичный зеркальный билд)
+          curl -L -o GeoLite2-Country.mmdb https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb
+
+      - name: 🚀 Run Monster Parser
+        run: python parser.py
         env:
-          PYTHONUNBUFFERED: "1" # Логи отображаются в реальном времени
-          GITHUB_ACTIONS: "true" # Флаг для скрипта, что он в CI/CD
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Шаг 5: Финальная синхронизация (Fallback Sync)
-      - name: Final Git Sync and Push
+      - name: 💾 Save Changes
         run: |
-          git config --local user.email "bot@vpn-monster.com"
-          git config --local user.name "VPN-Monster-Bot"
-          
-          # Убеждаемся, что мы на актуальной ветке
-          git fetch origin main
-          git checkout main
-          
-          # Добавляем все текстовые файлы и JSON состояние
-          git add *.txt *.json
-          
-          if ! git diff --cached --quiet; then
-            echo "Обнаружены изменения в файлах подписок. Фиксируем..."
-            git commit -m "Ultra-Sync: $(date +'%Y-%m-%d %H:%M:%S') [Automated Update]"
-            
-            # Агрессивный пуш: пробуем до 5 раз с паузой и ребейзом
-            MAX_RETRIES=5
-            COUNT=0
-            SUCCESS=false
-            until [ $COUNT -eq $MAX_RETRIES ]; do
-              if git push origin main; then
-                SUCCESS=true
-                break
-              fi
-              echo "Конфликт при пуше. Пробуем rebase... (Попытка $((COUNT + 1)))"
-              git pull --rebase origin main
-              COUNT=$((COUNT + 1))
-              sleep 5
-            done
-            
-            if [ "$SUCCESS" = false ]; then
-              echo "Не удалось выполнить пуш после $MAX_RETRIES попыток."
-              exit 1
-            fi
+          git config --global user.name "Monster-Bot"
+          git config --global user.email "monster-bot@github.com"
+          git add .
+          # Проверяем, есть ли изменения, чтобы не спамить пустыми коммитами
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
           else
-            echo "Git не обнаружил изменений в контенте .txt файлов."
+            git commit -m "⚡ Auto-Sync Monster: $(date +'%d/%m/%Y %H:%M:%S') [Sorted & Cleaned]"
+            git pull --rebase origin main
+            git push
           fi
