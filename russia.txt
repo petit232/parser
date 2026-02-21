@@ -12,4 +12,4 @@ vless://d5c9892f-e95a-4c6b-ae5d-2a68ab42f4e0@ch-2-tun.directly.chat:1055?type=tc
 vless://e06dedb1-548a-4b3c-9233-078af02c7595@lt-1-tun.directly.chat:1024?type=tcp&security=reality&encryption=none&pbk=dOTw4-PV7F9AHY7YnOkVOCD3sOWuRC-5wPjwienMi3g&fp=random&sni=yahoo.com&sid=29acbf&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B7%F0%9F%87%BA%20Russia%20%7C%20RU%20%F0%9F%87%B7%F0%9F%87%BA%20%E2%9D%A4%EF%B8%8F
 
 # Total Active: 12
-# Updated: 2026-02-21 12:05:39
+# Updated: 2026-02-21 12:08:09
