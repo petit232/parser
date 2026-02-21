@@ -2,7 +2,7 @@ name: ⚡ Monster Engine Auto-Sync
 
 on:
   schedule:
-    - cron: '0 * * * *' # Каждые 20 минут
+    - cron: '0 * * * *' # Строго раз в час (в 00 минут каждого часа)
   push:
     paths:
       - 'all_sources.txt'
@@ -29,26 +29,30 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: 🌍 Download GeoIP
+      - name: 🌍 Ensure Folders & Download GeoIP
         run: |
           mkdir -p "database"
-          # Если файла нет в папке, скачиваем его
+          mkdir -p "proxy"
+          # Скачиваем свежую базу GeoIP, если её нет или она сломана
           if [ ! -f "database/GeoLite2-Country.mmdb" ]; then
+            echo "Downloading GeoIP Database..."
             curl -L -o "database/GeoLite2-Country.mmdb" https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-Country.mmdb
           fi
 
       - name: 🚀 Run Monster Parser
         run: |
-          mkdir -p "proxy"
           python parser.py
 
-      - name: 💾 Save Changes
+      - name: 💾 Save and Push Changes
         run: |
           git config --global user.name "Monster-Bot"
           git config --global user.email "monster-bot@github.com"
-          git add .
+          
+          # Явно добавляем только то, что нужно, чтобы избежать потери файлов
+          git add database/* proxy/* all_sources.txt
+          
           if git diff --staged --quiet; then
-            echo "No changes"
+            echo "✅ No changes needed"
           else
             git commit -m "⚡ Monster Sync: $(date +'%d/%m/%Y %H:%M:%S')"
             git pull --rebase origin main
