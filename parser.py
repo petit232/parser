@@ -229,11 +229,11 @@ class MonsterParser:
             # Sort files by importance
             sorted_files = sorted(files_stats.items(), key=lambda x: x[1], reverse=True)
             for filename, count in sorted_files:
-                if count > 0:
-                    display_name = filename.replace(".txt", "").upper()
-                    content.append(f"📍 {display_name} ({count} nodes):")
-                    content.append(f"{repo_url}/{filename}")
-                    content.append("")
+                # Даже если 0 нод, заголовок будет в списке, чтобы клиент видел пустоту
+                display_name = filename.replace(".txt", "").upper()
+                content.append(f"📍 {display_name} ({count} nodes):")
+                content.append(f"{repo_url}/{filename}")
+                content.append("")
 
             with open(LINKS_INFO_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(content))
@@ -280,8 +280,8 @@ class MonsterParser:
                 
                 if total_count == 0:
                     logger.warning("No links found.")
-                    # Даже если ничего не нашли, обновим дату в главном файле ссылок
-                    self.update_links_for_clients({})
+                    # Обновляем дату даже при отсутствии нод
+                    self.update_links_for_clients({f: 0 for f in set(COUNTRY_MAP.values()) | {DEFAULT_MIX}})
                     return
 
                 # Batching logic
@@ -318,21 +318,23 @@ class MonsterParser:
 
             # Update files in "прокси" folder
             files_updated_stats = {}
+            # ГАРАНТИЯ: Берем абсолютно все файлы из карты стран + микс
             target_filenames = set(COUNTRY_MAP.values()) | {DEFAULT_MIX}
             
             for filename in target_filenames:
                 path = os.path.join(OUTPUT_DIR, filename)
                 current_nodes = {}
                 
-                # Load existing nodes to keep them until they fail a check
+                # Загружаем существующие, но СРАЗУ выкидываем мертвые
                 if os.path.exists(path):
                     with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
                             node = l.strip()
+                            # Умная проверка: если ноды нет в списке мертвых текущего батча, оставляем
                             if node and node not in dead_links:
                                 current_nodes[node] = True
                 
-                # Add new live results
+                # Добавляем свежие живые ноды
                 for res in live_results:
                     target = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
                     if target == filename:
@@ -340,27 +342,26 @@ class MonsterParser:
                 
                 nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_FILE]
                 
-                # FORCE UPDATE: Even if nodes_to_save is empty or unchanged,
-                # we rewrite the file to update the Git timestamp.
+                # ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ФАЙЛА (Даже если он пустой)
                 try:
                     with open(path, 'w', encoding='utf-8') as f:
                         if nodes_to_save:
                             f.write('\n'.join(nodes_to_save) + '\n')
                         else:
-                            # If no nodes, leave a comment or empty line to ensure file exists and is "touched"
-                            f.write('') 
-                    
-                    # Update modification time explicitly for insurance
-                    os.utime(path, None)
+                            # Оставляем файл пустым, но открываем на запись для обновления mtime
+                            f.write('')
+                    os.utime(path, None) # Явный touch
                 except Exception as e:
-                    logger.error(f"Error updating file {filename}: {e}")
+                    logger.error(f"Error touching file {filename}: {e}")
                     
                 files_updated_stats[filename] = len(nodes_to_save)
 
             self.update_links_for_clients(files_updated_stats)
 
-            # Update source file (clean dead nodes)
+            # ТОТАЛЬНАЯ ЗАЧИСТКА all_sources.txt:
+            # Оставляем подписки (http) и только те прямые конфиги, которые НЕ в dead_links
             final_sources = [e for e in raw_entries if e.startswith('http') or e not in dead_links]
+            
             with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(final_sources) + '\n')
 
@@ -372,7 +373,7 @@ class MonsterParser:
                 "last_run_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
             self.save_state()
-            logger.info(f"✅ Cycle complete. Active nodes: {sum(files_updated_stats.values())}")
+            logger.info(f"✅ Cycle complete. Active: {sum(files_updated_stats.values())}. Removed: {len(dead_links)}")
 
         except Exception as e:
             logger.critical(f"FATAL ERROR: {e}", exc_info=True)
