@@ -7,6 +7,7 @@ import re
 import socket
 import geoip2.database
 import logging
+import base64
 from datetime import datetime
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -25,20 +26,20 @@ GEOIP_DB = 'GeoLite2-Country.mmdb'
 LINKS_INFO_FILE = 'LINKS_FOR_CLIENTS.txt'
 LOCK_FILE = '.monster.lock'
 
-# Константы производительности
-TIMEOUT = 3            # Максимальное время ожидания ответа (DNS + TCP)
-MAX_CONCURRENCY = 150  # Количество параллельных проверок
-CYCLE_HOURS = 3        # За сколько часов нужно обновить всю базу полностью
-BATCH_INTERVAL_MIN = 20 # Как часто запускается скрипт (через GitHub Actions cron)
+# Performance constants
+TIMEOUT = 3            # Connection timeout
+MAX_CONCURRENCY = 150  # Parallel checks
+CYCLE_HOURS = 3        # Full database refresh cycle
+BATCH_INTERVAL_MIN = 20 # GitHub Actions cron interval
 
-# Пороги пинга для фильтрации (в миллисекундах)
+# Ping thresholds (ms)
 PING_LIMITS = {
-    'DEFAULT': 200,
-    'US': 220, 'HK': 220, 'SG': 220, 'JP': 220,
-    'BY': 200, 'KZ': 200, 'RU': 200
+    'DEFAULT': 250,
+    'US': 300, 'HK': 300, 'SG': 300, 'JP': 300,
+    'BY': 200, 'KZ': 200, 'RU': 250
 }
 
-# Регионы с наивысшим приоритетом (Беларусь, Казахстан, Европа)
+# Priority regions
 PRIORITY_REGIONS = {'BY', 'KZ', 'PL', 'DE', 'FI', 'SE', 'LT', 'LV', 'EE', 'RU'}
 
 COUNTRY_MAP = {
@@ -60,12 +61,12 @@ class MonsterParser:
         except Exception as e:
             logger.error(f"GeoIP Database error: {e}")
         
-        # Регулярка для извлечения хоста и порта
+        # Регулярка для поиска прокси-ссылок в любом мусоре
+        self.proxy_pattern = re.compile(r'(vless|vmess|trojan|ss|ssr)://[^\s"\'<>()]+')
         self.ip_pattern = re.compile(r'@?([\w\.-]+):(\d+)')
         self.semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
 
     def load_state(self):
-        """Загрузка состояния с гарантированными полями по умолчанию"""
         default_state = {"last_index": 0, "processed_total": 0, "dead_total": 0, "history": []}
         if os.path.exists(STATE_FILE):
             try:
@@ -73,7 +74,7 @@ class MonsterParser:
                     data = json.load(f)
                     return {**default_state, **data}
             except Exception as e:
-                logger.warning(f"Failed to load state, using defaults: {e}")
+                logger.warning(f"Failed to load state: {e}")
         return default_state
 
     def save_state(self):
@@ -84,7 +85,6 @@ class MonsterParser:
             logger.error(f"Failed to save state: {e}")
 
     def get_host_port(self, link):
-        """Извлекает хост и порт из прокси-ссылки"""
         try:
             match = self.ip_pattern.search(link)
             if match:
@@ -92,10 +92,33 @@ class MonsterParser:
         except Exception: pass
         return None, None
 
+    def decode_content(self, content):
+        """Декодирует Base64 содержимое подписок или возвращает текст как есть"""
+        try:
+            # Пытаемся декодировать как Base64
+            decoded = base64.b64decode(content).decode('utf-8', errors='ignore')
+            if '://' in decoded:
+                return decoded
+        except Exception:
+            pass
+        return content
+
+    async def fetch_subscription(self, session, url):
+        """Скачивает подписку и извлекает из неё ссылки"""
+        try:
+            async with session.get(url, timeout=10) as response:
+                if response.status == 200:
+                    raw_text = await response.text()
+                    decoded_text = self.decode_content(raw_text.strip())
+                    found = self.proxy_pattern.findall(decoded_text)
+                    # findall вернет список протоколов, нам нужны полные ссылки
+                    # Используем finditer для получения полных совпадений
+                    return [m.group(0) for m in self.proxy_pattern.finditer(decoded_text)]
+        except Exception as e:
+            logger.error(f"Failed to fetch sub {url}: {e}")
+        return []
+
     async def check_node(self, session, host, port, ip_cache):
-        """
-        Ультра-быстрый асинхронный TCP-пинг с неблокирующим DNS.
-        """
         cache_key = f"{host}:{port}"
         if cache_key in ip_cache:
             return ip_cache[cache_key]
@@ -103,13 +126,11 @@ class MonsterParser:
         async with self.semaphore:
             start_time = time.time()
             try:
-                # DNS Резолвинг в отдельном потоке
                 ip_addr = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(None, socket.gethostbyname, host),
                     timeout=TIMEOUT
                 )
                 
-                # Попытка TCP соединения
                 target_port = int(port) if port else 443
                 conn = asyncio.open_connection(ip_addr, target_port)
                 reader, writer = await asyncio.wait_for(conn, timeout=TIMEOUT)
@@ -132,7 +153,6 @@ class MonsterParser:
         except Exception: return None
 
     def wrap_for_russia(self, link):
-        """Добавляет параметры фрагментации для обхода DPI в РФ"""
         try:
             parsed = urlparse(link)
             if not parsed.scheme or (not parsed.netloc and '@' not in link): return link
@@ -152,55 +172,76 @@ class MonsterParser:
         except Exception: return link
 
     async def run(self):
-        # 1. Защита от наслоения (Lock File)
         if os.path.exists(LOCK_FILE):
             lock_age = time.time() - os.path.getmtime(LOCK_FILE)
-            if lock_age < 1200: # 20 минут лимит на один прогон
-                logger.warning(f"Process already running (Age: {int(lock_age)}s). Aborting.")
+            if lock_age < 1200:
+                logger.warning(f"Process already running. Aborting.")
                 return
             else:
-                logger.info(f"Stale lock found (Age: {int(lock_age)}s). Cleaning up.")
                 try: os.remove(LOCK_FILE)
                 except: pass
         
         try:
-            # Создаем лок-файл
             with open(LOCK_FILE, 'w') as f: f.write(str(time.time()))
 
             if not os.path.exists(SOURCE_FILE):
                 logger.error("Source file missing!")
                 return
 
-            # Читаем и чистим базу от дублей
+            # 1. Читаем сырые источники и разделяем их
             with open(SOURCE_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-                links = [l.strip() for l in f if len(l.strip()) > 10]
+                raw_entries = [l.strip() for l in f if len(l.strip()) > 5]
             
-            links = list(dict.fromkeys(links))
-            total_count = len(links)
-            if total_count == 0:
-                logger.warning("All sources file is empty.")
-                return
+            raw_entries = list(dict.fromkeys(raw_entries))
             
-            # 2. Динамический расчет размера батча (3-часовой цикл)
-            runs_per_cycle = (CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN
-            batch_size = max(500, int(total_count / runs_per_cycle))
+            subscriptions = []
+            direct_configs = []
             
-            # 3. Умная приоритезация
-            links.sort(key=lambda x: any(p in x.upper() for p in PRIORITY_REGIONS), reverse=True)
-            
-            start_idx = self.state.get("last_index", 0)
-            if start_idx >= total_count: start_idx = 0
-            end_idx = min(start_idx + batch_size, total_count)
-            
-            current_batch = links[start_idx:end_idx]
+            for entry in raw_entries:
+                if entry.startswith('http'):
+                    subscriptions.append(entry)
+                else:
+                    # Извлекаем ссылки из текста, даже если там кавычки
+                    found = [m.group(0) for m in self.proxy_pattern.finditer(entry)]
+                    direct_configs.extend(found)
 
-            logger.info(f"📊 Engine Stats: Total Links={total_count}, Current Batch={len(current_batch)}")
-            
-            ip_cache = {}
-            results = []
-            dead_links = set()
+            # 2. Распаковка подписок
+            all_expanded_links = direct_configs
+            logger.info(f"🌐 Fetching {len(subscriptions)} subscriptions...")
             
             async with aiohttp.ClientSession() as session:
+                sub_tasks = [self.fetch_subscription(session, url) for url in subscriptions]
+                sub_results = await asyncio.gather(*sub_tasks)
+                for sub_links in sub_results:
+                    all_expanded_links.extend(sub_links)
+
+                # Убираем дубликаты после распаковки
+                all_expanded_links = list(dict.fromkeys(all_expanded_links))
+                total_count = len(all_expanded_links)
+                
+                if total_count == 0:
+                    logger.warning("No links found in any source.")
+                    return
+
+                # 3. Батчинг
+                runs_per_cycle = (CYCLE_HOURS * 60) / BATCH_INTERVAL_MIN
+                batch_size = max(500, int(total_count / runs_per_cycle))
+                
+                # Приоритезация
+                all_expanded_links.sort(key=lambda x: any(p in x.upper() for p in PRIORITY_REGIONS), reverse=True)
+                
+                start_idx = self.state.get("last_index", 0)
+                if start_idx >= total_count: start_idx = 0
+                end_idx = min(start_idx + batch_size, total_count)
+                
+                current_batch = all_expanded_links[start_idx:end_idx]
+                logger.info(f"📊 Engine Stats: Total Found={total_count}, Batch={len(current_batch)}")
+                
+                ip_cache = {}
+                results = []
+                dead_links = set()
+                
+                # 4. Проверка нод
                 tasks = []
                 for link in current_batch:
                     h, p = self.get_host_port(link)
@@ -222,11 +263,10 @@ class MonsterParser:
                     else:
                         dead_links.add(link)
 
-            # 4. Обновление файлов по странам (БЕЗОПАСНОЕ ОБНОВЛЕНИЕ)
+            # 5. Обновление файлов по странам
             files_updated_stats = {}
             for filename in set(COUNTRY_MAP.values()) | {DEFAULT_MIX}:
                 current_nodes = {}
-                # Читаем существующие ноды, исключая только те, что сейчас признаны мертвыми
                 if os.path.exists(filename):
                     with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
                         for l in f:
@@ -234,45 +274,43 @@ class MonsterParser:
                             if node and node not in dead_links: 
                                 current_nodes[node] = True
                 
-                # Добавляем новые живые результаты из текущего батча
                 for res in results:
                     target_file = COUNTRY_MAP.get(res['country'], DEFAULT_MIX)
                     if target_file == filename:
                         current_nodes[res['link']] = True
                 
-                # Сохраняем результат (если в итоге файл не пустой или мы специально его чистим)
                 nodes_to_save = list(current_nodes.keys())[:MAX_NODES_PER_COUNTRY]
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write('\n'.join(nodes_to_save) + '\n')
-                
                 files_updated_stats[filename] = len(nodes_to_save)
 
-            # 5. Глобальная чистка мастер-базы (all_sources.txt)
-            remaining_master = [l for l in links if l not in dead_links]
-            with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(remaining_master) + '\n')
+            # 6. Глобальная чистка мастер-базы
+            # Мы удаляем только те "прямые" конфиги, которые сдохли.
+            # Ссылки на подписки (http) мы не трогаем, так как они - вечные источники.
+            final_sources = []
+            for entry in raw_entries:
+                if entry.startswith('http'):
+                    final_sources.append(entry)
+                elif entry not in dead_links:
+                    final_sources.append(entry)
 
-            # Итоговая статистика
-            total_alive_in_files = sum(files_updated_stats.values())
-            
-            # Сохраняем прогресс
+            with open(SOURCE_FILE, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(final_sources) + '\n')
+
+            # Сохранение состояния
             self.state["last_index"] = end_idx if end_idx < total_count else 0
             self.state["processed_total"] = self.state.get("processed_total", 0) + len(current_batch)
             self.state["dead_total"] = self.state.get("dead_total", 0) + len(dead_links)
             self.state["last_run_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.save_state()
             
-            # ГРАНДИОЗНЫЙ ОТЧЕТ В ЛОГИ
             print("\n" + "="*50)
             print(f"🚀 MONSTER ENGINE REPORT | {self.state['last_run_time']}")
             print("="*50)
-            print(f"📂 Master Database:    {total_count} links")
-            print(f"📦 Batch Processed:   {len(current_batch)} links")
-            print(f"✅ Live in Batch:      {len(results)}")
-            print(f"💀 Dead (Removed):     {len(dead_links)}")
-            print(f"☠️  Total Dead Found:   {self.state['dead_total']}")
-            print("-"*50)
-            print(f"📈 Total Active Proxies across all files: {total_alive_in_files}")
+            print(f"📦 Sources: {len(subscriptions)} subs, {len(direct_configs)} direct")
+            print(f"🔍 Total nodes found: {total_count}")
+            print(f"✅ Live in batch: {len(results)} | 💀 Dead: {len(dead_links)}")
+            print(f"📈 Active in files: {sum(files_updated_stats.values())}")
             print("="*50 + "\n")
 
         except Exception as e:
