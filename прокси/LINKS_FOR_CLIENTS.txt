@@ -1,0 +1,42 @@
+🚀 MONSTER ENGINE - АКТУАЛЬНЫЕ ПОДПИСКИ
+Обновлено: 21/02/2026 20:08:45
+------------------------------------------
+
+📍 MIX (291 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/mix.txt
+
+📍 USA (61 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/usa.txt
+
+📍 NETHERLANDS (23 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/netherlands.txt
+
+📍 GERMANY (21 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/germany.txt
+
+📍 SWEDEN (9 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/sweden.txt
+
+📍 FRANCE (7 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/france.txt
+
+📍 UK (6 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/uk.txt
+
+📍 RUSSIA (4 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/russia.txt
+
+📍 FINLAND (3 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/finland.txt
+
+📍 KAZAKHSTAN (3 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/kazakhstan.txt
+
+📍 LATVIA (2 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/latvia.txt
+
+📍 POLAND (1 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/poland.txt
+
+📍 SWITZERLAND (1 nodes):
+https://raw.githubusercontent.com/petit232/parser/main/прокси/switzerland.txt
