@@ -241,4 +241,4 @@ vless://fa335d1c-e6d1-48bb-99a3-f06710a29043@104.26.15.21:443/?type=ws&encryptio
 vless://nasnet@57.129.64.102:443?security=tls&alpn=h2%2Chttp%2F1.1&encryption=none&headerType=none&fp=chrome&type=tcp&flow=xtls-rprx-vision&sni=nasnet-5712964102-direct.sharghdaily.co#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%A9%F0%9F%87%AA%20Germany%20%7C%20DE%20%F0%9F%87%A9%F0%9F%87%AA%20%E2%9D%A4%EF%B8%8F
 
 # Total Active: 241
-# Updated: 2026-02-21 12:12:27
+# Updated: 2026-02-21 12:13:43
