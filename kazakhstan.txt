@@ -1,5 +1,6 @@
-ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpjYzI3YTMwMTJkODFhNDRj@213.156.137.142:43660
-vless://762ac78b-0d9d-4d3e-aee5-e2597e7f3f6d@kz01-vlr01.tcp-reset-club.net:443?type=tcp&security=reality&encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=mLmBhbVFfNuo2eUgBh6r9-5Koz9mUCn3aSzlR6IejUg&sid=d3b13f31&sni=hls-svod.itunes.apple.com&spx=/
+vless://4fe214fb-048e-431f-b939-4518dc9df6a2@91.224.74.245:8443?encryption=none&flow=xtls-rprx-vision&fp=chrome&pbk=Q14CnaHWZmHtoKtHOJyZoZgvGrOkiwN75hXakkrNCHQ&security=reality&sid=d51dc759a379666c&sni=kzt.overload.ovh&type=tcp
+vmess://eyJhZGQiOiAiMjE3Ljc2LjY0LjE5NSIsICJhaWQiOiAiMCIsICJhbHBuIjogIiIsICJob3N0IjogInNrdW9uZS5zZXJ2ZW1pbmVjcmFmdC5uZXQiLCAiaWQiOiAiNGFiZGY1OGUtMDUxNi00NjhkLTk1NzEtZmUyNWNiNDg5N2VmIiwgIm5ldCI6ICJ3cyIsICJwYXRoIjogIi9AZm9yd2FyZHYycmF5IiwgInBvcnQiOiAiNDQzIiwgInBzIjogIjRKYWRpLTE0NTYyIiwgInNjeSI6ICJhdXRvIiwgInNuaSI6ICIiLCAidGxzIjogInRscyIsICJ0eXBlIjogIm5vbmUiLCAidiI6ICIyIn0=
+vmess://eyJhZGQiOiIxODUuMTc2LjI2Ljk3IiwiYWlkIjoiMCIsImFscG4iOiIiLCJob3N0IjoidHdpbGlnaHQubXJiYXJtYXNpLndvcmtlcnMuZGV2IiwiaWQiOiIyMGU5Mjg4MS01ZmI0LTRiMDUtYmM3Ny01NzkyOTQ3NmRjNjkiLCJuZXQiOiJ3cyIsInBhdGgiOiIvZGUtMi5zaGFyZWNlbnRyZS5vbmxpbmUvc2hpcmtlciIsInBvcnQiOiI0NDMiLCJwcyI6IkBGT1hfVlBONjbwn6aKKFZNRVNTKSIsInNjeSI6ImF1dG8iLCJzbmkiOiJ0d2lsaWdodC5tcmJhcm1hc2kud29ya2Vycy5kZXYiLCJ0bHMiOiJ0bHMiLCJ0eXBlIjoiIiwidiI6IjIifQ==👇قابل
 
-# Total: 2
-# Updated: 2026-02-21 09:59:08
+# Total: 3
+# Updated: 2026-02-21 10:14:35

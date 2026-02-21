@@ -1,4 +1,5 @@
-vless://id6856346113@s1.nodu10.ru:443?security=reality&encryption=none&pbk=wOSxr467-m4ivlNk1m10wf6k4LDqO2bAkN0SEoC0tCA&headerType=none&fp=chrome&spx=/wsuRvDjSrK41q7N&type=tcp&flow=xtls-rprx-vision&sni=🔒
+ss://YWVzLTI1Ni1jZmI6Qk5tQVhYeEFIWXBUUmR6dQ@185.135.86.173:9020
+ss://YWVzLTI1Ni1jZmI6SFNadXlKUWNXZThkeE5kRg@185.135.86.173:9043
 
-# Total: 1
-# Updated: 2026-02-21 09:59:08
+# Total: 2
+# Updated: 2026-02-21 10:14:35

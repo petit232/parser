@@ -1,7 +1,8 @@
-ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpYTjZYZjBacXdEZUZydDM5VFFyYWVu@45.80.231.75:31019
+hysteria2://75193bef8d8fe82341e02dd083dc1399@dd.openaccessnode.com:989?insecure=0&sni=dd.ircybersec.org&obfs=salamander&obfs-password=@JavidnamanIran-Javid-SHAH-King-Reza-Pahlavi
 trojan://telegram-id-directvpn@13.49.224.224:22222?security=tls&sni=trj.rollingnext.co.uk
-vless://0c57c801-c2e2-4af0-8dd5-05e0d080a5e8@87.121.105.127:443/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=cdnjs.com&fp=chrome&security=reality&pbk=1he5EyHxI595x0mNkFNxOebUOQZGVGIy_c92bn1qO2o&sid=ac31827454d7f693
-vless://b61cc5a5-6bc9-4cae-95db-e4f7445677ae@cloud.mahoshid.ir:8080/?type=httpupgrade&encryption=none&host=www.speedtest.net.tps.debian.org.gr.websites.orvcdnfuckflt.sanatgostarm.ir&path=🔒
+vless://02fb468f-21f2-460e-bfa1-ef52ae5e627f@77.221.137.44:443?encryption=none&security=tls&sni=secdn13.suio.me&type=tcp
+vless://9936e4bd-036e-4e3d-a975-9cb37d07b611@lv.sephost.de:8085?security=reality&encryption=none&pbk=OIYG0kOVwCLP_Zkw_-uKRwX0jCcJkZxMADpTML4n0yU&headerType=none&fp=firefox&type=tcp&sni=stackoverflow.com&sid=9b1a0779152db496
+vless://ca0cee79-9920-4bce-aa2a-be89d6d84790@70.34.194.73:8443?security=reality&sni=sto-se-ping.vultr.com&type=tcp&fp=chrome&pbk=kQzN2YuAfK6zLF-YnToH8KJsBClM_XPr38Xlzr4Q3Bw&sid=c970cd609c52577e
 
-# Total: 4
-# Updated: 2026-02-21 09:59:08
+# Total: 5
+# Updated: 2026-02-21 10:14:35

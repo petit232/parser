@@ -1,9 +1,13 @@
-ss://YWVzLTI1Ni1nY206WTZSOXBBdHZ4eHptR0M@172.99.190.61:5600
-vless://02db10db44e04d6aae77331b0694ac1b@91.231.186.24:8443?encryption=none&type=xhttp&path=%2Fx&security=reality&sni=nytimes.com&pbk=WhRQP6-muqar8s2OsjHGZZnSiG5LEGsp-CGv6wkhdDs&sid=aabbccdd&fp=random
-vless://18da5a86-1b44-4a88-bb2b-6845d75a74a3@51.195.202.129:443?path=🔒
-vless://6202b230-417c-4d8e-b624-0f71afa9c75d@57.128.179.254:443?&security=tls&fp=chrome&sni=sni.111000.indevs.in&type=ws&headerType=none&host=sni.111000.indevs.in&path=%2F%3Fed%3D2560%26Telegram%F0%9F%87%A8%F0%9F%87%B3%20%40WangCai2
-vless://644fdf71-5d76-4f28-b3d6-b1c386172f32@109.120.128.109:51337/?type=tcp&encryption=none&flow=xtls-rprx-vision&sni=🔒
-vless://6c590c58-0bcd-4b64-a073-c46066080d7e@185.162.229.212:80?flow=&type=ws&host=join-to-Vmessorg.sabadyt.ir&path=🔒
+ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpPaUxSN2FBMGs1akp4djB1aWtRbFRV@78.129.140.11:443
+ss://YWVzLTI1Ni1jZmI6YXNkS2thc2tKS2Zuc2E@198.244.231.27:443
+ss://YWVzLTI1Ni1nY206UmV4bkJnVTdFVjVBRHhH@172.99.190.87:7002
+trojan://02e653c9-7c93-46a9-999d-11834bd0c577@132.145.51.172:443?security=tls
+trojan://gIRrGnuuNm@45.85.119.0:2096?path=%2F&security=tls&host=aa.v2jey.fun&type=ws&sni=aa.v2jey.fun
+trojan://shenmegui@185.49.33.47:8461?security=tls&sni=$jp.swiftfalcon.app
+vless://9e769ce1-34be-4e3f-b0a6-823f30eb8f69@95.164.18.5:2082?path=🔒
+vless://d8dd94fd-540e-461d-b5d4-acebef02c22a@5.61.63.5:34045/?type=tcp&encryption=none&sni=🔒
+vmess://eyJhZGQiOiAiMTQ5LjcuMTYuMTc0IiwgImFpZCI6IDAsICJob3N0IjogIiIsICJpZCI6ICIwM2ZjYzYxOC1iOTNkLTY3OTYtNmFlZC04YTM4Yzk3NWQ1ODEiLCAibmV0IjogIndzIiwgInBhdGgiOiAiL2xpbmt2d3MiLCAicG9ydCI6IDQ0MywgInBzIjogIjRKYWRpLTEzMDIyIiwgInNlY3VyaXR5IjogImF1dG8iLCAic2tpcC1jZXJ0LXZlcmlmeSI6IHRydWUsICJzbmkiOiAiIiwgInRscyI6ICJ0bHMiLCAidHlwZSI6ICJhdXRvIn0=
+vmess://eyJhZGQiOiAiNzcuODMuMjU0LjE4IiwgImFpZCI6IDAsICJob3N0IjogIiIsICJpZCI6ICIxNmZiZDMzYS0xMTdkLTQ4NmItYjBkZi0xMWEyNzU5ZjNiMTQiLCAibmV0IjogIndzIiwgInBhdGgiOiAiLyIsICJwb3J0IjogNTEwOTMsICJwcyI6ICI0SmFkaS0xNTMxNSIsICJzZWN1cml0eSI6ICJhdXRvIiwgInNraXAtY2VydC12ZXJpZnkiOiB0cnVlLCAic25pIjogIiIsICJ0bHMiOiAiIiwgInR5cGUiOiAiYXV0byJ9
 
-# Total: 6
-# Updated: 2026-02-21 09:59:08
+# Total: 10
+# Updated: 2026-02-21 10:14:35
