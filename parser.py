@@ -186,7 +186,7 @@ def pre_populate_ip_cache():
                                             loaded_count += 1
             except Exception: pass
             
-    print(f"✅ В память загружено {loaded_count} известных IP. Они мгновенно пропустят проверку API.")
+    print(f"✅ В память загружено {loaded_count} известных IP.")
 
 # --- ТУРБО-ДВИЖОК GEOIP (10 ЗЕРКАЛЬНЫХ ПРОВАЙДЕРОВ) ---
 
@@ -274,32 +274,28 @@ def save_blacklist(bl):
             for node, ts in sorted_bl: f.write(f"{node}|{ts.isoformat()}\n")
     except: pass
 
-# --- СИСТЕМА СОХРАНЕНИЯ (FORCE MIRROR MODE) ---
+# --- СИСТЕМА СОХРАНЕНИЯ (STATIC CONTENT MODE) ---
 
 def save_and_organize(structured, final_mix_list, failed_list):
     """
-    Принудительная перезапись файлов. 
-    В каждый файл добавляется уникальная метка времени и Sync ID, 
-    чтобы гарантировать наличие изменений для Git.
+    Сохранение файлов.
+    ВАЖНО: Мы НЕ добавляем Sync ID или метки времени ВНУТРЬ файлов подписок.
+    Это гарантирует, что если список прокси не изменился, файл останется 
+    байт-в-байт идентичным, что сохраняет стабильность статических ссылок GitHub.
     """
-    now = datetime.now()
-    now_str = now.strftime('%Y-%m-%d %H:%M:%S')
-    ms_stamp = now.strftime('%f') # Микросекунды для гарантированного отличия
-    sync_id = uuid.uuid4().hex[:8] 
-
     for country in COUNTRIES:
         file_name = f"{country}.txt"
         configs = structured.get(country, [])
+        # Сортировка обязательна для консистентности файла
         valid = sorted(list(set(configs)))
         
         try:
             with open(file_name, 'w', encoding='utf-8') as f:
                 if valid:
                     f.write("\n".join(valid))
-                    f.write(f"\n\n# --- MONSTER MIRROR SYNC INFO ---\n")
-                    f.write(f"# Nodes: {len(valid)}\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
                 else:
-                    f.write(f"# No active nodes for {country}\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
+                    # Пустой комментарий вместо динамической даты
+                    f.write(f"# No active nodes for {country}\n")
         except Exception: pass
 
     valid_mix = sorted(list(set(final_mix_list)))
@@ -307,11 +303,10 @@ def save_and_organize(structured, final_mix_list, failed_list):
         with open("mix.txt", 'w', encoding='utf-8') as f:
             if valid_mix:
                 f.write("\n".join(valid_mix))
-                f.write(f"\n\n# --- MONSTER MIRROR SYNC INFO ---\n")
-                f.write(f"# Total Mix: {len(valid_mix)}\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
             else:
-                f.write(f"# No active nodes found\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
+                f.write("# No active nodes found\n")
         
+        # Подписка в Base64 (без метаданных внутри)
         with open("sub_monster.txt", 'w', encoding='utf-8') as f:
             f.write(encode_base64("\n".join(valid_mix)) if valid_mix else "")
             
@@ -319,42 +314,42 @@ def save_and_organize(structured, final_mix_list, failed_list):
         with open("failed_nodes.txt", 'w', encoding='utf-8') as f:
             if valid_failed:
                 f.write("\n".join(valid_failed))
-                f.write(f"\n\n# --- MONSTER MIRROR SYNC INFO ---\n")
-                f.write(f"# Failed Count: {len(valid_failed)}\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
             else:
-                f.write(f"# No failed nodes detected\n# Time: {now_str}.{ms_stamp}\n# SyncID: {sync_id}\n")
+                f.write("# No failed nodes detected\n")
                 
         with open("sub_failed.txt", 'w', encoding='utf-8') as f:
             f.write(encode_base64("\n".join(valid_failed)) if valid_failed else "")
     except Exception: pass
 
 def git_commit_push():
-    """Силовое обновление репозитория с принудительным коммитом."""
-    print("\n[Git] Синхронизация репозитория (Mirror Mode)...", flush=True)
+    """Обновление репозитория. Используем --allow-empty только при явном требовании."""
+    print("\n[Git] Синхронизация репозитория (Static Link Protection)...", flush=True)
     try:
         subprocess.run(["git", "config", "--local", "user.name", "VPN-Monster-Bot"], check=True)
         subprocess.run(["git", "config", "--local", "user.email", "bot@vpn-monster.com"], check=True)
-        
-        # Очищаем индекс и добавляем всё заново
         subprocess.run(["git", "add", "."], check=True)
         
-        timestamp = datetime.now().strftime('%d/%m %H:%M:%S')
-        msg = f"🚀 Monster Sync {timestamp} [Force Sync]"
+        timestamp = datetime.now().strftime('%d/%m %H:%M')
+        msg = f"🚀 Monster Sync {timestamp}"
         
-        # Проверяем статус. Если изменений нет (хотя SyncID их гарантирует), делаем пустой коммит
+        # Проверяем, есть ли реальные изменения в файлах
         status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout.strip()
         
         if not status:
-            print("[Git] Контент идентичен. Выполняю принудительную ревизию...")
-            subprocess.run(["git", "commit", "--allow-empty", "-m", msg], check=True)
-        else:
-            subprocess.run(["git", "commit", "-m", msg], check=True)
+            print("[Git] Контент файлов не изменился. Ссылки остаются прежними. Пропуск коммита.")
+            return
+
+        subprocess.run(["git", "commit", "-m", msg], check=True)
         
-        # Силовой Push для перезаписи состояния
-        subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
-        print("[Git] Зеркало успешно обновлено в GitHub!")
+        # Обычный push. Force используем только если возник конфликт веток
+        result = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
+        if result.returncode != 0:
+            print("[Git] Конфликт веток. Применяю Force Push...")
+            subprocess.run(["git", "push", "origin", "main", "--force"], check=True)
+            
+        print("[Git] Обновление завершено. Ссылки на GitHub обновлены.")
     except Exception as e:
-        print(f"[Git] Критическая ошибка синхронизации: {e}")
+        print(f"[Git] Ошибка синхронизации: {e}")
 
 # --- ФУНКЦИИ ВОРКЕРЫ (WORKERS) ---
 
@@ -387,7 +382,7 @@ def process_monster_engine():
     start_time = datetime.now()
     print(f"\n{'='*50}\n🚀 MONSTER ENGINE SYNC СТАРТ: {start_time.strftime('%H:%M:%S')}\n{'='*50}", flush=True)
     
-    # 1. Принудительный анализ текущего состояния
+    # 1. Анализ текущего состояния
     pre_populate_ip_cache()
     
     # 2. Сбор источников из внешнего файла
@@ -397,7 +392,7 @@ def process_monster_engine():
             sources = list(set([l.strip() for l in f if l.strip() and l.startswith('http')]))
     
     if not sources:
-        print("[!] ВНИМАНИЕ: Файл all_sources.txt пуст. Работа в режиме очистки.")
+        print("[!] ВНИМАНИЕ: Файл all_sources.txt пуст.")
 
     blacklist = load_blacklist()
     raw_configs = []
@@ -489,11 +484,11 @@ def process_monster_engine():
                 except: continue
             
     # 5. Финализация и синхронизация
-    print("💾 Прямая синхронизация файлов (Режим Зеркала)...", flush=True)
+    print("💾 Прямая синхронизация файлов (Статичный контент)...", flush=True)
     save_and_organize(structured_data, final_mix_list, failed_new)
     save_blacklist(blacklist)
     
-    # Принудительная очистка мусора перед Git
+    # Очистка памяти
     global_seen.clear()
     gc.collect()
     
