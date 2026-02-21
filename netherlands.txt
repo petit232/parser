@@ -1,1 +1,1 @@
-# No active nodes for netherlands
+vless://86be7d6e-9dda-433b-8ea8-0c44a7dfcfbd@85.158.110.62:8443?security=reality&fp=chrome&type=tcp&flow=xtls-rprx-vision&pbk=sOjlAEcrubT3nuRzox3bAkQSptuLhelt7CykvSZXW3I&sni=google.com#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B3%F0%9F%87%B1%20Netherlands%20%7C%20NL%20%F0%9F%87%B3%F0%9F%87%B1%20%E2%9D%A4%EF%B8%8F

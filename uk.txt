@@ -1,1 +1,1 @@
-# No active nodes for uk
+vless://0569f3ce-447b-4ac5-aae3-b47ae55351f7@167.82.92.159:80?path=%2F&security=none&encryption=none&host=dayous.global.ssl.fastly.net&type=ws#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%AC%F0%9F%87%A7%20United%20Kingdom%20%7C%20GB%20%F0%9F%87%AC%F0%9F%87%A7%20%E2%9D%A4%EF%B8%8F
