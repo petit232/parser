@@ -3,16 +3,17 @@ import re
 import requests
 import base64
 
-# --- НАСТРОЙКИ ГЕОГРАФИИ ---
+# --- ТОЧНЫЕ НАСТРОЙКИ ГЕОГРАФИИ ---
+# Используем регулярные выражения \b для точного поиска слов
 COUNTRIES = {
-    "belarus": {"keys": ["by", "bel", "minsk", "бел", "минск"], "flag": "🇧🇾"},
-    "kazakhstan": {"keys": ["kz", "kaz", "almaty", "astana", "алм", "аст", "каз"], "flag": "🇰🇿"},
-    "germany": {"keys": ["de", "ger", "frankfurt", "berlin", "герм", "франк", "берл"], "flag": "🇩🇪"},
-    "poland": {"keys": ["pl", "pol", "warsaw", "warsz", "gdansk", "польш", "варш", "гдан"], "flag": "🇵🇱"},
-    "usa": {"keys": ["us", "usa", "america", "united", "states", "ny", "york", "сша", "амер"], "flag": "🇺🇸"},
-    "sweden": {"keys": ["se", "swe", "stockholm", "швец", "сток"], "flag": "🇸🇪"},
-    "netherlands": {"keys": ["nl", "neth", "amsterdam", "нидер", "амстер"], "flag": "🇳🇱"},
-    "latvia_lithuania": {"keys": ["lv", "lt", "latv", "lith", "riga", "vilnius", "латв", "литв"], "flag": "🇱🇻"}
+    "belarus": {"keys": [r"by", r"bel", r"minsk", r"беларусь", r"минск"], "flag": "🇧🇾"},
+    "kazakhstan": {"keys": [r"kz", r"kaz", r"almaty", r"astana", r"казахстан", r"алматы"], "flag": "🇰🇿"},
+    "germany": {"keys": [r"de", r"ger", r"frankfurt", r"germany", r"германия"], "flag": "🇩🇪"},
+    "poland": {"keys": [r"pl", r"pol", r"warsaw", r"poland", r"польша"], "flag": "🇵🇱"},
+    "usa": {"keys": [r"us", r"usa", r"america", r"united states", r"сша"], "flag": "🇺🇸"},
+    "sweden": {"keys": [r"se", r"swe", r"stockholm", r"швеция"], "flag": "🇸🇪"},
+    "netherlands": {"keys": [r"nl", r"neth", r"amsterdam", "нидерланды"], "flag": "🇳🇱"},
+    "russia": {"keys": [r"ru", r"rus", r"russia", r"россия", r"moscow"], "flag": "🇷🇺"}
 }
 
 PROTOCOLS = ["vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "tuic://"]
@@ -59,7 +60,7 @@ def process():
         if not any(proto in config.lower() for proto in PROTOCOLS):
             continue
 
-        # Убираем дубли по адресу сервера
+        # 1. Уникальность по адресу (чтобы не дублировать Anycast)
         server_match = re.search(r'://([^/?#@]+@)?([^/?#:]+:[0-9]+|[^/?#:]+)', config)
         if server_match:
             server_address = server_match.group(2)
@@ -67,15 +68,21 @@ def process():
                 continue
             unique_check.add(server_address)
 
-        # Сортировка БЕЗ ПЕРЕИМЕНОВАНИЯ
+        # 2. Ищем страну ТОЛЬКО в названии (после #)
+        name_part = ""
+        if '#' in config:
+            name_part = config.split('#')[-1].lower()
+        
         found_country = False
-        for country, info in COUNTRIES.items():
-            for key in info["keys"]:
-                if key.lower() in config.lower(): # Ищем ключ во всей строке
-                    structured_data[country].add(config)
-                    found_country = True
-                    break
-            if found_country: break
+        if name_part:
+            for country, info in COUNTRIES.items():
+                for key in info["keys"]:
+                    # Поиск целого слова, чтобы 'us' не находилось в 'anycast'
+                    if re.search(r'\b' + key + r'\b', name_part):
+                        structured_data[country].add(config)
+                        found_country = True
+                        break
+                if found_country: break
         
         mix_data.add(config)
 
@@ -84,7 +91,7 @@ def process():
         if f.endswith('.txt') and f not in ['all_sources.txt', 'requirements.txt']:
             os.remove(f)
 
-    # Сохраняем как есть
+    # Сохраняем оригиналы
     for country, configs in structured_data.items():
         if configs:
             with open(f"{country}.txt", 'w', encoding='utf-8') as f:
