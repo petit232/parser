@@ -1,2 +1,0 @@
-# No active nodes for sweden
-vless://Parsashonam-254@185.146.173.39:8880?path=%2F&security=none&encryption=none&host=Search.DigiKala.CYoU.&type=httpupgrade&fragment=10-20%2C30-50&mux=enable%3Dtrue%26concurrency%3D8#v2go%20%7C%20%F0%9F%87%B8%F0%9F%87%AA%20SE%20%7C%20VLESS%20%7C%201303
