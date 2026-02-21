@@ -2,4 +2,4 @@ vless://63a69490-56b4-4988-ac3a-23947d9e9b55@pl-1.vpnd.io:52680?type=tcp&securit
 vless://cf010197-f1d8-4ecb-9c27-6592bb6b338b@pl-2.vpnd.io:447?type=tcp&security=reality&encryption=none&pbk=B9hJZvUb_ug7oE2H6vvlHDgoX9OPVa99lWRQA2vGo1Y&fp=random&sni=amazon.com&sid=c0ca571e90a93c&spx=%2F&flow=xtls-rprx-vision#%E2%9D%A4%EF%B8%8F%20%F0%9F%87%B5%F0%9F%87%B1%20Poland%20%7C%20PL%20%F0%9F%87%B5%F0%9F%87%B1%20%E2%9D%A4%EF%B8%8F
 
 # Total: 2
-# Updated: 2026-02-21 11:46:18
+# Updated: 2026-02-21 11:46:20
