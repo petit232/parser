@@ -38,6 +38,7 @@ LOCK_FILE = "monster_daemon.lock"
 PERSISTENT_BLACKLIST = "persistent_blacklist.txt"
 PROCESSED_SOURCES_FILE = "processed_sources.dat"
 ALL_SOURCES_FILE = "all_sources.txt"
+LINKS_LIST_FILE = "links_list.txt"  # Тот самый реестр статических ссылок
 
 # --- КОНФИГУРАЦИЯ СТРАН (PREMIUM MIRROR DESIGN) ---
 # Формат оформления: ❤️ 🇧🇾 Belarus | BY 🇧🇾 ❤️
@@ -403,33 +404,51 @@ def geoip_parallel_worker(cfg):
     return (cfg, code)
 
 # ==============================================================================
-# --- ФИНАЛИЗАЦИЯ И СИНХРОНИЗАЦИЯ ---
+# --- ФИНАЛИЗАЦИЯ И СИНХРОНИЗАЦИЯ (NEW STATIC LINKS LOGIC) ---
 # ==============================================================================
 
 def generate_static_links():
-    """Абсолютно статические ссылки на подписки (Авто-генератор)."""
-    print("\n🔗 Обновление статических ссылок клиента...", flush=True)
+    """
+    Абсолютно статические ссылки на подписки. 
+    Создает файл LINKS_FOR_CLIENTS.txt (для чтения человеком) 
+    и links_list.txt (для автоматического парсинга приложением).
+    """
+    print("\n🔗 Обновление статических реестров и ссылок...", flush=True)
     try:
         remote_url = subprocess.run(["git", "config", "--get", "remote.origin.url"], 
                                    capture_output=True, text=True).stdout.strip()
         
         if not remote_url:
-            print("[!] Git Origin URL не найден. Ссылки будут локальными.")
+            print("[!] Git Origin URL не найден. Используются заглушки.")
             raw_base = "https://raw.githubusercontent.com/USER/REPO/main/"
         else:
+            # Превращаем git url в raw github url
             raw_base = remote_url.replace("github.com", "raw.githubusercontent.com").replace(".git", "")
             if "raw.githubusercontent.com" in raw_base:
                 raw_base += "/main/"
         
-        links = []
-        links.append(f"🚀 MONSTER VPN PRO SUBSCRIPTIONS 🚀\n")
-        links.append(f"🔥 MIX (Text): {raw_base}mix.txt")
-        links.append(f"🔥 MIX (Base64): {raw_base}sub_monster.txt\n")
-        links.append("🌍 --- BY COUNTRIES --- 🌍")
+        # 1. Формируем LINKS_FOR_CLIENTS.txt (Читабельный список)
+        human_links = []
+        human_links.append(f"🚀 MONSTER VPN PRO SUBSCRIPTIONS 🚀\n")
+        human_links.append(f"🔥 MIX (Text): {raw_base}mix.txt")
+        human_links.append(f"🔥 MIX (Base64): {raw_base}sub_monster.txt\n")
+        human_links.append("🌍 --- BY COUNTRIES --- 🌍")
         for c in COUNTRIES:
-            links.append(f"{c.upper()}: {raw_base}{c}.txt")
+            human_links.append(f"{c.upper()}: {raw_base}{c}.txt")
+        atomic_save("LINKS_FOR_CLIENTS.txt", "\n".join(human_links))
         
-        atomic_save("LINKS_FOR_CLIENTS.txt", "\n".join(links))
+        # 2. Формируем links_list.txt (Машиночитаемый реестр)
+        # Этот файл приложение будет использовать как "Якорь"
+        machine_links = []
+        machine_links.append(f"ALL_MIX_TEXT={raw_base}mix.txt")
+        machine_links.append(f"ALL_MIX_B64={raw_base}sub_monster.txt")
+        for c in COUNTRIES:
+            # Записываем в формате COUNTRY_CODE=URL
+            machine_links.append(f"{COUNTRIES[c]['code']}={raw_base}{c}.txt")
+            
+        atomic_save(LINKS_LIST_FILE, "\n".join(machine_links))
+        
+        print(f"✅ Реестр {LINKS_LIST_FILE} актуализирован.")
         print("✅ LINKS_FOR_CLIENTS.txt актуализирован.")
     except Exception as e:
         print(f"[!] Ошибка генератора ссылок: {e}")
@@ -588,7 +607,6 @@ def run_update_cycle(trigger_reason="Таймер"):
     
     if valid_nodes:
         print(f"🌍 GeoIP Классификация (Контроль: {GEOIP_PARALLEL_LEVEL} потоков)...", flush=True)
-        # Очистка старого кэша для актуализации (оставляем только для текущего пула)
         with CACHE_LOCK: IP_CACHE.clear()
         
         random.shuffle(valid_nodes)
@@ -611,14 +629,14 @@ def run_update_cycle(trigger_reason="Таймер"):
                                 break
                     if not matched:
                         final_mix.append(beautify_config(cfg, None, fallback_code=code))
-                        
+                    
                     if i > 0 and i % 100 == 0:
                         print(f"  > Локация определена: {i}/{len(queue)}...")
                 except: continue
 
-    # 7. Атомарное сохранение и Пуш
+    # 7. Атомарное сохранение, Генерация Реестра и Пуш
     save_and_organize(structured_data, final_mix, dead_configs_for_purge)
-    generate_static_links()
+    generate_static_links() # Генерируем реестр links_list.txt
     git_commit_push()
     
     gc.collect() # Чистка оперативной памяти
@@ -641,11 +659,11 @@ def start_daemon():
     print(f"🛡️ VPN MONSTER DAEMON ЗАПУЩЕН И АКТИВЕН 🛡️")
     print(f"Интервал обновлений: {UPDATE_INTERVAL_HOURS} часов")
     print(f"Мониторинг файла '{ALL_SOURCES_FILE}' включен.")
+    print(f"Реестр ссылок: '{LINKS_LIST_FILE}' активирован.")
     print(f"Нажмите Ctrl+C для безопасной остановки.")
     print(f"{'*'*70}\n")
     
     last_run_time = datetime.min
-    # Запоминаем время модификации файла для Auto-Trigger
     last_sources_mod_time = get_file_mod_time(ALL_SOURCES_FILE)
     
     try:
@@ -667,7 +685,6 @@ def start_daemon():
             if trigger_reason:
                 run_update_cycle(trigger_reason)
                 last_run_time = datetime.now()
-                # Перечитываем mod_time на случай, если скрипт сам изменил файл (Deep Purge)
                 last_sources_mod_time = get_file_mod_time(ALL_SOURCES_FILE)
                 
                 if SHOULD_EXIT: break
