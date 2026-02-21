@@ -21,4 +21,4 @@ https://raw.githubusercontent.com/lagzian/SS-Collector/main/mix_clash.yaml
 https://raw.githubusercontent.com/Argh94/V2RayAutoConfig/refs/heads/main/configs/Vless.txt
 https://raw.githubusercontent.com/Argh94/V2RayAutoConfig/refs/heads/main/configs/Hysteria2.txt
 https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/sub/sub_list.json
-https://raw.githubusercontent.com/NiREvil/vless/main/sub/SSTime
+https://raw.githubusercontent.com/NiREvil/vless/main/sub/SSTimehttps://raw.githubusercontent.com/petit232/parser/refs/heads/main/kazakhstan.txt?token=GHSAT0AAAAAADSZ4KUQ32WCPF6NA33MYD262MZPGBQ
